@@ -9,6 +9,7 @@ class Teacher(db.Model):
     email = db.Column(db.String())
     phone_number = db.Column(db.String())
     full_name = db.Column(db.String())
+    lesson_time = db.relationship("Scheduling", back_populates="teacher")
 
     def __init__(self, email: str, first_name: str, last_name: str, phone_number: str) -> None:
         self.email = email.title()
@@ -27,6 +28,7 @@ class Student(db.Model):
     email = db.Column(db.String())
     phone_number = db.Column(db.String())
     full_name = db.Column(db.String())
+    lesson_time = db.relationship("Scheduling", back_populates="student")
 
     def __init__(self, email: str, first_name: str, last_name: str, phone_number: str) -> None:
         self.email = email.title()
@@ -43,9 +45,20 @@ class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String())
     description = db.Column(db.String())
+    lesson_time = db.relationship("Scheduling", back_populates="subject")
 
     def __init__(self, title: str) -> None:
         self.title = title.title()
 
     def __repr__(self) -> str:
         return f'<Subject {self.title}>'
+
+
+class Scheduling(db.Model):
+    __tablename__ = 'scheduling'
+
+    id = db.Column(db.Integer, primary_key=True)
+    lesson_time = db.Column(db.DateTime)
+    teacher = db.relationship("Teacher", back_populates="lesson_time")
+    student = db.relationship("Student", back_populates="lesson_time")
+    subject = db.relationship("Subject", back_populates="lesson_time")
