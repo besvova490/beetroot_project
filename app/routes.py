@@ -1,4 +1,4 @@
-from app import app
+from app import app, teacher_funcs
 from flask import jsonify
 
 
@@ -12,9 +12,16 @@ def about():
     return jsonify({'message': 'About page', 'title': 'About'}), 200
 
 
+@app.route('/blog', methods=['GET'])
+def blog():
+    return jsonify({'message': 'Blog page', 'title': 'Blog'}), 200
+
+
 @app.route('/tutors', methods=['GET'])
 def tutors_page():
-    return jsonify({'message': 'Tutors page', 'title': 'Tutors'}), 200
+    tutors = teacher_funcs.TeacherConf.teachers_list()
+    resp = jsonify({'message': 'Tutors page', 'title': 'Tutors', 'data': tutors})
+    return resp, 200
 
 
 @app.route('/students', methods=['GET'])
