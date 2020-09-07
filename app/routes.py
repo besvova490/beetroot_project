@@ -21,6 +21,7 @@ def blog():
 
 @app.route('/sign-up', methods=['POST'])
 def user_create():
+    print(1222222, request.json)
     user_data = request.json['data']
     create = users_func.UserConf.sign_up(**user_data)
     return create
@@ -28,7 +29,6 @@ def user_create():
 
 @app.route('/sign-in', methods=['POST'])
 def user_sign_in():
-    print(1222222, request.json)
     user_data = request.json['data']
     return users_func.UserConf.sign_in(user_data)
 

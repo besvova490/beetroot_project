@@ -45,14 +45,14 @@ class UserConf:
         return jsonify({'data': user_data}), 200
 
     @staticmethod
-    def sign_up(email, password, is_teacher):
+    def sign_up(email, password, teacher):
         if User.query.filter_by(email=email).first():
             return jsonify({'message': f'User with current email {email} exists'}), 409
-        teacher = User(email, password)
-        teacher.is_teacher = bool(is_teacher)
+        user = User(email, password)
+        user.is_teacher = bool(teacher)
         db.session.add(teacher)
         db.session.commit()
-        return jsonify({'message': f'{"Teacher" if is_teacher else "Student"} created!'}), 201
+        return jsonify({'message': f'{"Teacher" if teacher else "Student"} created!'}), 201
 
     @staticmethod
     def sign_in(data):
