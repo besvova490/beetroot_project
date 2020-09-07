@@ -4,7 +4,9 @@ from flask import jsonify, request
 
 @app.route('/', methods=['GET'])
 def index():
-    return jsonify({'message': 'Home page', 'title': 'Home'}), 200
+    resp = jsonify({'message': 'Home page', 'title': 'Home'})
+    resp.set_cookie('hello', 'test', samesite='None')
+    return resp, 200
 
 
 @app.route('/about', methods=['GET'])
@@ -26,6 +28,7 @@ def user_create():
 
 @app.route('/sign-in', methods=['POST'])
 def user_sign_in():
+    print(1222222, request.json)
     user_data = request.json['data']
     return users_func.UserConf.sign_in(user_data)
 
