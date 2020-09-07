@@ -68,6 +68,7 @@ class UserConf:
             resp = jsonify({'login': True})
             set_access_cookies(resp, access_token)
             set_refresh_cookies(resp, refresh_token)
+            resp.set_cookie('teacher', user.is_teacher, samesite='None', secure=True)
             return resp, 200
         return {'message': 'Invalid password'}, 403
 

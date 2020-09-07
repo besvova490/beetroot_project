@@ -5,7 +5,6 @@ from flask import jsonify, request
 @app.route('/', methods=['GET'])
 def index():
     resp = jsonify({'message': 'Home page', 'title': 'Home'})
-    resp.set_cookie('hello', 'test', samesite='None', secure=True)
     return resp, 200
 
 
@@ -44,25 +43,6 @@ def tutors_page():
     return resp, 200
 
 
-@app.route('/tutors/<int:tutors_id>', methods=['GET'])
-def tutor_page(tutors_id):
-    resp = users_func.UserConf.get_user_dy_id(tutors_id)
-    return resp
-
-
-@app.route('/tutors/<int:tutors_id>', methods=['PUT'])
-def tutor_page_update(tutors_id):
-    data = request.json['data']
-    resp = users_func.UserConf.update_user(tutors_id, data)
-    return resp
-
-
-@app.route('/tutors/<int:tutors_id>', methods=['DELETE'])
-def tutor_delete(tutors_id):
-    resp = users_func.UserConf.user_delete(tutors_id)
-    return resp
-
-
 @app.route('/students', methods=['GET'])
 def students_page():
     students = users_func.UserConf.get_users_list(is_teacher=False)
@@ -70,22 +50,22 @@ def students_page():
     return resp, 200
 
 
-@app.route('/students/<int:students_id>', methods=['GET'])
-def student_page(students_id):
-    resp = users_func.UserConf.get_user_dy_id(students_id)
+@app.route('/user/<int:user_id>', methods=['GET'])
+def student_page(user_id):
+    resp = users_func.UserConf.get_user_dy_id(user_id)
     return resp
 
 
-@app.route('/students/<int:students_id>', methods=['PUT'])
-def student_page_update(students_id):
+@app.route('/user/<int:user_id>', methods=['PUT'])
+def student_page_update(user_id):
     data = request.json['data']
-    resp = users_func.UserConf.update_user(students_id, data)
+    resp = users_func.UserConf.update_user(user_id, data)
     return resp
 
 
-@app.route('/students/<int:students_id>', methods=['DELETE'])
-def student_delete(students_id):
-    resp = users_func.UserConf.user_delete(students_id)
+@app.route('/user/<int:user_id>', methods=['DELETE'])
+def student_delete(user_id):
+    resp = users_func.UserConf.user_delete(user_id)
     return resp
 
 
