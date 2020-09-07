@@ -5,7 +5,7 @@ from flask import jsonify, request
 @app.route('/', methods=['GET'])
 def index():
     resp = jsonify({'message': 'Home page', 'title': 'Home'})
-    resp.set_cookie('hello', 'test', samesite='None')
+    resp.set_cookie('hello', 'test', samesite='None', secure=True)
     return resp, 200
 
 
