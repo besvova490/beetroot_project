@@ -7,9 +7,13 @@ association_users_roles = db.Table(
     db.Column('student_id', db.Integer, db.ForeignKey('users.id')),
     db.Column('teacher_id', db.Integer, db.ForeignKey('users.id'))
 )
-association_teachers_subject = db.Table('subjects_mtm',
+association_users_subject = db.Table('subjects_mtm',
     db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
     db.Column('subjects_id', db.Integer, db.ForeignKey('subjects.id'), primary_key=True)
+)
+association_users_scheduling = db.Table('users_scheduling_mtm',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('scheduling_id', db.Integer, db.ForeignKey('schedulings.id'), primary_key=True)
 )
 
 
@@ -17,28 +21,32 @@ class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    telegram_id = db.Column(db.String())
+    telegram_id = db.Column(db.Integer)
     email = db.Column(db.String())
     password = db.Column(db.String(128))
     phone_number = db.Column(db.String())
     full_name = db.Column(db.String())
     is_teacher = db.Column(db.Boolean, default=False)
-    lesson_date = db.Column(db.Integer, db.ForeignKey('schedulings.id'))
+    lesson_date = db.relationship(
+        "Scheduling", secondary=association_users_scheduling,
+        lazy="dynamic", backref=db.backref("users", lazy=True)
+    )
     teachers = db.relationship(
         'User', secondary=association_users_roles,
         primaryjoin=(association_users_roles.c.teacher_id == id),
         secondaryjoin=(association_users_roles.c.student_id == id),
         backref=db.backref('students', lazy='dynamic'), lazy='dynamic')
     subjects = db.relationship(
-        "Subject", secondary=association_teachers_subject,
+        "Subject", secondary=association_users_subject,
         lazy="dynamic", backref=db.backref("users", lazy=True)
     )
 
     def check_password_hash(self, password):
         return sha256_crypt.verify(password, self.password)
 
-    def __init__(self, email: str, password: str) -> None:
+    def __init__(self, email="", password="", telegram_id="") -> None:
         self.email = email
+        self.telegram_id = telegram_id
         self.password = sha256_crypt.hash(password.strip())
 
     def __repr__(self) -> str:
@@ -65,8 +73,8 @@ class Scheduling(db.Model):
     __tablename__ = 'schedulings'
 
     id = db.Column(db.Integer, primary_key=True)
+    confirmation = db.Column(db.Boolean, default=False)
     lesson_time = db.Column(db.DateTime)
-    users = db.relationship("User")
     subject = db.relationship("Subject", back_populates="lesson_time", uselist=False)
 
     def __repr__(self) -> str:

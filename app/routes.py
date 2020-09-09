@@ -1,5 +1,6 @@
-from app import app, users_func, subject_func
+from app import app, users_func, subject_func, scheduling_func
 from flask import jsonify, request
+import datetime
 
 
 @app.route('/', methods=['GET'])
@@ -50,10 +51,18 @@ def students_page():
     return resp, 200
 
 
+@app.route('/subjects', methods=['GET'])
+def subjects():
+    subjects = subject_func.SubjectConf.get_subjects_list()
+    resp = jsonify({'message': 'Subjects page', 'title': 'Subjects', 'data': subjects})
+    return resp, 200
+
+
 @app.route('/user/<int:user_id>', methods=['GET'])
-def student_page(user_id):
-    resp = users_func.UserConf.get_user_dy_id(user_id)
-    return resp
+def user_page(user_id):
+    user = users_func.UserConf.get_user_object(user_id)
+    resp = users_func.UserConf.get_user_info(user)
+    return jsonify({'massage': 'User page', 'data': resp}), 200
 
 
 @app.route('/user/<int:user_id>', methods=['PUT'])
@@ -66,19 +75,6 @@ def student_page_update(user_id):
 @app.route('/user/<int:user_id>', methods=['DELETE'])
 def student_delete(user_id):
     resp = users_func.UserConf.user_delete(user_id)
-    return resp
-
-
-@app.route('/subjects', methods=['GET'])
-def subjects_page():
-    subjects = subject_func.SubjectConf.get_subjects_list()
-    resp = jsonify({'message': 'Subjects page', 'title': 'Subjects', 'data': subjects})
-    return resp, 200
-
-
-@app.route('/subjects/<int:subject_id>', methods=['GET'])
-def subject_page(subject_id):
-    resp = subject_func.SubjectConf.get_subject_by_id(subject_id)
     return resp
 
 
@@ -101,3 +97,65 @@ def subject_delete(subject_id):
     resp = subject_func.SubjectConf.subject_delete(subject_id)
     return resp
 
+
+@app.route('/subjects/<int:subject_id>', methods=['GET'])
+def subject_page(subject_id):
+    resp = subject_func.SubjectConf.get_subject_by_id(subject_id)
+    return resp
+
+
+@app.route('/subjects/<int:subject_id>/<int:user_id>', methods=['POST'])
+def add_user_to_subject(user_id, subject_id):
+    resp = users_func.UserConf.add_to_subject(user_id, subject_id)
+    return resp
+
+
+@app.route('/scheduling', methods=['POST'])
+def add_scheduling():
+    data = request.json['data']
+    data['time'] = datetime.datetime.strptime(data['time'], '%d-%m-%Y')
+    resp = scheduling_func.SchedulingConf.add_scheduling(data['teacher'], data['student'], data['subject'], data['time'])
+    return {'message': 'Created'}, 200
+
+
+@app.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
+def scheduling_confirmation(user_id, scheduling_id):
+    teacher = users_func.UserConf.get_user_object(user_id).full_name
+    data = request.json['data']
+    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, data['status'])
+    students = resp[0].json['student']
+    for student in students:
+        message = f'Teacher: {teacher} approved lesson: ' \
+                  f'{resp[0].json["subject"]} \nLesson time: {resp[0].json["time"]}'
+        users_func.UserConf.send_message(int(student), message)
+    return resp
+
+
+@app.route('/user/<int:user_id>/schedule/not-confirmed', methods=['GET'])
+def schedule_confirmed(user_id):
+    return users_func.UserConf.wait_for_confirmation(user_id), 200
+
+
+@app.route('/telegram-check', methods=['POST'])
+def telegram_check():
+    resp = users_func.UserConf.check_telegram(request.json['data'])
+    return jsonify({'message': 'test'}), 200
+
+
+@app.route('/telegram-sign-up', methods=['POST'])
+def user_create_telegram():
+    user_data = request.json['data']
+    create = users_func.UserConf.sign_up_telegram(user_data)
+    return create
+
+
+@app.route('/telegram-sign-in', methods=['POST'])
+def user_sign_in_telegram():
+    user_data = request.json['data']
+    return users_func.UserConf.sign_in_telegram(user_data)
+
+
+@app.route('/telegram-user/<int:teacher_id>/<int:user_id>', methods=['POST'])
+def connect_user_teacher(teacher_id, user_id):
+    resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
+    return resp

@@ -1,5 +1,6 @@
 from app import app, db
 from app.models import User, Subject
+from app import scheduling_func
 from flask import jsonify
 from flask_jwt_extended import (
     JWTManager, create_access_token,
@@ -7,19 +8,41 @@ from flask_jwt_extended import (
     set_access_cookies,
     set_refresh_cookies, unset_jwt_cookies
 )
+import requests
+
 jwt = JWTManager(app)
 
 
 class UserConf:
 
     @staticmethod
+    def get_user_object(user_id):
+        user = User.query.get(user_id)
+        if not user:
+            raise KeyError(f'Unknown user with id: {user_id}')
+        return user
+
+    @staticmethod
+    def check_telegram(data):
+        user = User.query.filter_by(telegram_id=data['telegram_id'])
+        if user:
+            return UserConf.sign_in_telegram(data['telegram_id'])
+        return jsonify({'message': 'New user'}), 200
+
+    @staticmethod
     def get_users_list(is_teacher=True):
         user_list = []
         for user in User.query.filter_by(is_teacher=is_teacher):
-            users_role = {'students': tuple({'name': student.full_name, 'email': student.email} for student in user.students)}
             if not is_teacher:
-                users_role = {'teachers': tuple({'name': teacher.full_name, 'email': teacher.email} for teacher in user.teachers)}
+                users_role = {'teachers': tuple(
+                    {'name': teacher.full_name, 'email': teacher.email} for
+                    teacher in user.teachers)}
+            else:
+                users_role = {'students': tuple(
+                    {'name': student.full_name, 'email': student.email} for
+                    student in user.students)}
             user_list.append({
+                'id': user.id,
                 'name': user.full_name,
                 'email': user.email,
                 'subjects': tuple({'name': subject.title, 'id': subject.id} for subject in user.subjects),
@@ -28,28 +51,41 @@ class UserConf:
         return user_list
 
     @staticmethod
-    def get_user_dy_id(user_id):
-        if not User.query.get(user_id):
-            return jsonify({'message': f'Unknown user with id: {user_id}'}), 404
-        user = User.query.get(user_id)
+    def get_user_info(user):
         if user.is_teacher:
-            users_role = {'students': tuple({'name': student.full_name, 'email': student.email} for student in user.students)}
+            users_role = {'students': tuple({'name': student.full_name, 'email': student.email, 'id': student.id} for student in user.students)}
         else:
-            users_role = {'students': tuple({'name': teacher.full_name, 'email': teacher.email} for teacher in user.teachers)}
+            users_role = {'teachers': tuple({'name': teacher.full_name, 'email': teacher.email, 'id': teacher.id} for teacher in user.teachers)}
         user_data = {
+            'id': user.id,
             'name': user.full_name,
             'email': user.email,
-            'subjects': tuple({'name': subject.title, 'id': subject.id} for subject in user.subjects),
+            'is_teacher': user.is_teacher,
+            'subjects': tuple({'title': subject.title, 'id': subject.id} for subject in user.subjects),
+            'schedule': tuple({'time': schedule.lesson_time,
+                               'subject': schedule.subject.title,
+                               'teacher': scheduling_func.SchedulingConf.teacher_scheduling(schedule)} for schedule in user.lesson_date),
             **users_role
         }
-        return jsonify({'data': user_data}), 200
+        return user_data
 
     @staticmethod
     def sign_up(data):
         if User.query.filter_by(email=data['email']).first():
             return jsonify({'message': f'User with current email {data["email"]} exists'}), 409
-        user = User(data['email'], data['password'])
+        user = User(email=data['email'], password=data['password'])
         user.is_teacher = data['teacher']
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
+
+    @staticmethod
+    def sign_up_telegram(data):
+        if User.query.filter_by(telegram_id=data['telegram_id']).first():
+            return UserConf.sign_in_telegram(data)
+        user = User(telegram_id=data['telegram_id'])
+        user.is_teacher = data['teacher']
+        user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}"
         db.session.add(user)
         db.session.commit()
         return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
@@ -72,6 +108,14 @@ class UserConf:
         return {'message': 'Invalid password'}, 403
 
     @staticmethod
+    def sign_in_telegram(data):
+        user = User.query.filter_by(telegram_id=f"{data['telegram_id']}").first()
+        if not user:
+            return UserConf.sign_up_telegram(data)
+        resp = jsonify({'message': 'you are in sustem', 'data': UserConf.get_user_info(user)})
+        return resp, 200
+
+    @staticmethod
     def log_out():
         resp = jsonify({'logout': True})
         unset_jwt_cookies(resp)
@@ -79,9 +123,7 @@ class UserConf:
 
     @staticmethod
     def update_user(user_id, data):
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'message': 'Unknown user'}), 404
+        user = UserConf.get_user_object(user_id)
         user.telegram_id = data.get('telegram_id', user.telegram_id)
         user.email = data.get('email', user.email)
         user.phone_number = data.get('phone_number', user.phone_number)
@@ -92,9 +134,7 @@ class UserConf:
 
     @staticmethod
     def user_delete(user_id):
-        user = User.query.get(user_id)
-        if not user:
-            return jsonify({'message': f'Unknown user with id {user_id}'}), 404
+        user = UserConf.get_user_object(user_id)
         db.session.delete(user)
         db.session.commit()
         return jsonify({'message': 'User deleted'}), 201
@@ -102,20 +142,20 @@ class UserConf:
     @staticmethod
     def add_to_subject(user_id, subject_id):
         subject = Subject.query.get(subject_id)
-        user = User.query.get(user_id)
-        if not user or not subject:
-            return jsonify({'message': 'Unknown user or subject'}), 404
-        if user in subject.teachers:
+        user = UserConf.get_user_object(user_id)
+        if not subject:
+            return jsonify({'message': 'Unknown subject'}), 404
+        if user in subject.users:
             return jsonify({'message': 'User already in subject'}), 409
-        subject.user.append(user)
+        subject.users.append(user)
         db.session.add(subject)
         db.session.commit()
-        return jsonify({'message': 'User added'}), 201
+        return jsonify({'message': 'Subject added'}), 201
 
     @staticmethod
     def connect_teacher_with_student(teacher_id, student_id):
-        teacher = User.query.get(teacher_id)
-        student = User.query.get(student_id)
+        teacher = UserConf.get_user_object(teacher_id)
+        student = UserConf.get_user_object(student_id)
         if not teacher or not student:
             return jsonify({'message': 'Unknown teacher or student'}), 404
         if teacher in student.teachers:
@@ -124,3 +164,17 @@ class UserConf:
         db.session.add(student)
         db.session.commit()
         return jsonify({'message': 'Unification successful'}), 201
+
+    @staticmethod
+    def wait_for_confirmation(user_id):
+        user = UserConf.get_user_object(user_id)
+        scheduling = tuple({'id': schedule.id, 'time': schedule.lesson_time} for schedule in user.lesson_date if not schedule.confirmation)
+        return jsonify({'data': scheduling})
+
+    @staticmethod
+    def send_message(chat_id, text):
+        method = "sendMessage"
+        token = "1317578331:AAEuCDPqvBDHMA68aWVuD5KdBAE92joNAqw"
+        url = f"https://api.telegram.org/bot{token}/{method}"
+        data = {"chat_id": chat_id, "text": text}
+        requests.post(url, data=data)

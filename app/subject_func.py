@@ -10,6 +10,7 @@ class SubjectConf:
         subjects_list = []
         for subject in Subject.query.all():
             subjects_list.append({
+                'id': subject.id,
                 'title': subject.title,
                 'description': subject.description,
                 'teachers': tuple({'name': teacher.full_name, 'email': teacher.email} for teacher in subject.users if teacher.is_teacher),
