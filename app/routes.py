@@ -115,14 +115,13 @@ def add_scheduling():
     data = request.json['data']
     data['time'] = datetime.datetime.strptime(data['time'], '%d-%m-%Y')
     resp = scheduling_func.SchedulingConf.add_scheduling(data['teacher'], data['student'], data['subject'], data['time'])
-    return {'message': 'Created'}, 200
+    return resp
 
 
 @app.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
 def scheduling_confirmation(user_id, scheduling_id):
     teacher = users_func.UserConf.get_user_object(user_id).full_name
-    data = request.json['data']
-    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, data['status'])
+    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id)
     students = resp[0].json['student']
     for student in students:
         message = f'Teacher: {teacher} approved lesson: ' \
@@ -139,7 +138,7 @@ def schedule_confirmed(user_id):
 @app.route('/telegram-check', methods=['POST'])
 def telegram_check():
     resp = users_func.UserConf.check_telegram(request.json['data'])
-    return jsonify({'message': 'test'}), 200
+    return resp
 
 
 @app.route('/telegram-sign-up', methods=['POST'])

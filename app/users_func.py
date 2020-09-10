@@ -24,10 +24,10 @@ class UserConf:
 
     @staticmethod
     def check_telegram(data):
-        user = User.query.filter_by(telegram_id=data['telegram_id'])
+        user = User.query.filter_by(telegram_id=str(data['telegram_id'])).first()
         if user:
-            return UserConf.sign_in_telegram(data['telegram_id'])
-        return jsonify({'message': 'New user'}), 200
+            return jsonify({'message': 'Old user', 'exist': True}), 200
+        return jsonify({'message': 'New user', 'exist': False}), 200
 
     @staticmethod
     def get_users_list(is_teacher=True):
@@ -64,6 +64,8 @@ class UserConf:
             'subjects': tuple({'title': subject.title, 'id': subject.id} for subject in user.subjects),
             'schedule': tuple({'time': schedule.lesson_time,
                                'subject': schedule.subject.title,
+                               'confirmed': schedule.confirmation,
+                               'student': scheduling_func.SchedulingConf.student_scheduling(schedule),
                                'teacher': scheduling_func.SchedulingConf.teacher_scheduling(schedule)} for schedule in user.lesson_date),
             **users_role
         }
@@ -109,7 +111,7 @@ class UserConf:
 
     @staticmethod
     def sign_in_telegram(data):
-        user = User.query.filter_by(telegram_id=f"{data['telegram_id']}").first()
+        user = User.query.filter_by(telegram_id=str(data['telegram_id'])).first()
         if not user:
             return UserConf.sign_up_telegram(data)
         resp = jsonify({'message': 'you are in sustem', 'data': UserConf.get_user_info(user)})
@@ -168,11 +170,14 @@ class UserConf:
     @staticmethod
     def wait_for_confirmation(user_id):
         user = UserConf.get_user_object(user_id)
-        scheduling = tuple({'id': schedule.id, 'time': schedule.lesson_time} for schedule in user.lesson_date if not schedule.confirmation)
+        scheduling = tuple({'id': schedule.id, 'time': schedule.lesson_time,
+                            'student': scheduling_func.SchedulingConf.student_scheduling(schedule)} for schedule in user.lesson_date if not schedule.confirmation)
         return jsonify({'data': scheduling})
 
     @staticmethod
     def send_message(chat_id, text):
+        if not chat_id:
+            return {'message': 'No telegram id'}
         method = "sendMessage"
         token = "1317578331:AAEuCDPqvBDHMA68aWVuD5KdBAE92joNAqw"
         url = f"https://api.telegram.org/bot{token}/{method}"

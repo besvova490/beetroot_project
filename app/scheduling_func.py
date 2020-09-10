@@ -33,18 +33,19 @@ class SchedulingConf:
                 return {'id': user.id, 'name': user.full_name}
 
     @staticmethod
-    def scheduling_confirmation(scheduling_id, confirmation):
+    def student_scheduling(scheduling):
+        for user in scheduling.users:
+            if not user.is_teacher:
+                return {'id': user.id, 'name': user.full_name}
+
+    @staticmethod
+    def scheduling_confirmation(scheduling_id):
         scheduling = Scheduling.query.get(scheduling_id)
         student = [user.telegram_id for user in scheduling.users if not user.is_teacher]
-        if confirmation:
-            scheduling.confirmation = True
-            db.session.add(scheduling)
-            db.session.commit()
-            return jsonify({'message': 'Teacher confirmed the lesson',
-                            'status': True, 'student': student,
-                            'subject': scheduling.subject.title,
-                            'time': scheduling.lesson_time}), 200
-        return jsonify({'message': 'Teacher rejected the lesson',
-                        'status': False, 'student': student,
+        scheduling.confirmation = True
+        db.session.add(scheduling)
+        db.session.commit()
+        return jsonify({'message': 'Teacher approved the lesson',
+                        'status': True, 'student': student,
                         'subject': scheduling.subject.title,
                         'time': scheduling.lesson_time}), 200
