@@ -18,7 +18,7 @@ def about():
 @app.route('/blog', methods=['GET'])
 @jwt_required
 def blog():
-    return jsonify({'message': 'Blog page', 'title': 'Blog', 'user': get_jwt_identity()}), 200
+    return jsonify({'message': 'Blog page', 'title': 'Blog'}), 200
 
 
 @app.route('/sign-up', methods=['POST'])
@@ -58,6 +58,12 @@ def subjects():
     subjects = subject_func.SubjectConf.get_subjects_list()
     resp = jsonify({'message': 'Subjects page', 'title': 'Subjects', 'data': subjects})
     return resp, 200
+
+
+@app.route('/profile', methods=['GET'])
+@jwt_required
+def user_profile():
+    return user_page(get_jwt_identity())
 
 
 @app.route('/user/<int:user_id>', methods=['GET'])
