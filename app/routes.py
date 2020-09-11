@@ -1,7 +1,7 @@
 from app import app, users_func, subject_func, scheduling_func
 from flask import jsonify, request
 import datetime
-from flask_jwt_extended import jwt_required
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
 @app.route('/', methods=['GET'])
@@ -18,7 +18,7 @@ def about():
 @app.route('/blog', methods=['GET'])
 @jwt_required
 def blog():
-    return jsonify({'message': 'Blog page', 'title': 'Blog'}), 200
+    return jsonify({'message': 'Blog page', 'title': 'Blog', 'user': get_jwt_identity()}), 200
 
 
 @app.route('/sign-up', methods=['POST'])
