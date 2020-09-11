@@ -104,7 +104,6 @@ class UserConf:
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
             resp = jsonify({'login': True})
-            resp.set_cookie('is_teacher', user.is_teacher)
             set_access_cookies(resp, access_token)
             set_refresh_cookies(resp, refresh_token)
             return resp, 200
