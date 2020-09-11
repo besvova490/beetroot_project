@@ -1,6 +1,7 @@
 from app import app, users_func, subject_func, scheduling_func
 from flask import jsonify, request
 import datetime
+from flask_jwt_extended import jwt_required
 
 
 @app.route('/', methods=['GET'])
@@ -15,6 +16,7 @@ def about():
 
 
 @app.route('/blog', methods=['GET'])
+@jwt_required
 def blog():
     return jsonify({'message': 'Blog page', 'title': 'Blog'}), 200
 
