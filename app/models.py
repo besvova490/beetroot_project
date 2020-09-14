@@ -72,6 +72,7 @@ class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String())
     description = db.Column(db.String())
+    test = db.Column(db.String())
     lesson_time = db.relationship("Scheduling", backref="subject", lazy='dynamic', cascade="all, delete")
 
     def __init__(self, title: str) -> None:
