@@ -22,7 +22,7 @@ class User(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     telegram_id = db.Column(db.Integer)
-    email = db.Column(db.String())
+    email = db.Column(db.String(), unique=True)
     password = db.Column(db.String(128))
     phone_number = db.Column(db.String())
     full_name = db.Column(db.String())
