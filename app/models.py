@@ -44,9 +44,8 @@ class User(db.Model):
     def check_password_hash(self, password):
         return sha256_crypt.verify(password, self.password)
 
-    def __init__(self, email="", password="", telegram_id="") -> None:
+    def __init__(self, email="", password="") -> None:
         self.email = email
-        self.telegram_id = telegram_id
         self.password = sha256_crypt.hash(password.strip())
 
     def to_dict(self):
