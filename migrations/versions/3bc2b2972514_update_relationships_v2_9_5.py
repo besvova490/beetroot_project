@@ -1,8 +1,8 @@
 """update relationships v2.9.5
 
-Revision ID: 8047f3d4c47a
-Revises: 3bc2b2972514
-Create Date: 2020-09-12 22:16:19.923627
+Revision ID: 3bc2b2972514
+Revises: e0d3e5561583
+Create Date: 2020-09-12 22:06:25.215298
 
 """
 from alembic import op
@@ -10,8 +10,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '8047f3d4c47a'
-down_revision = '3bc2b2972514'
+revision = '3bc2b2972514'
+down_revision = 'e0d3e5561583'
 branch_labels = None
 depends_on = None
 
