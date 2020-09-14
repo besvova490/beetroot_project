@@ -10,7 +10,7 @@ app.config.from_object(os.environ['APP_SETTINGS'])
 
 db = SQLAlchemy(app)
 
-migrate = Migrate(app, db)
+migrate = Migrate(app, db, compare_type=True)
 
 CORS(app, supports_credentials=True)
 
