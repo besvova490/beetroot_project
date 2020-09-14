@@ -1,6 +1,5 @@
 from app import app, db
 from app.models import User, Subject
-from app import scheduling_func
 from flask import jsonify
 from flask_jwt_extended import (
     JWTManager, create_access_token,
@@ -31,44 +30,11 @@ class UserConf:
 
     @staticmethod
     def get_users_list(is_teacher=True):
-        user_list = []
-        for user in User.query.filter_by(is_teacher=is_teacher):
-            if not is_teacher:
-                users_role = {'teachers': tuple(
-                    {'name': teacher.full_name, 'email': teacher.email} for
-                    teacher in user.teachers)}
-            else:
-                users_role = {'students': tuple(
-                    {'name': student.full_name, 'email': student.email} for
-                    student in user.students)}
-            user_list.append({
-                'id': user.id,
-                'name': user.full_name,
-                'email': user.email,
-                'subjects': tuple({'name': subject.title, 'id': subject.id} for subject in user.subjects),
-                **users_role
-            })
-        return user_list
+        return [user.to_dict() for user in User.query.filter_by(is_teacher=is_teacher)]
 
     @staticmethod
     def get_user_info(user):
-        if user.is_teacher:
-            users_role = {'students': tuple({'name': student.full_name, 'email': student.email, 'id': student.id} for student in user.students)}
-        else:
-            users_role = {'teachers': tuple({'name': teacher.full_name, 'email': teacher.email, 'id': teacher.id} for teacher in user.teachers)}
-        user_data = {
-            'id': user.id,
-            'name': user.full_name,
-            'email': user.email,
-            'is_teacher': user.is_teacher,
-            'subjects': tuple({'title': subject.title, 'id': subject.id} for subject in user.subjects),
-            'schedule': tuple({'time': schedule.lesson_time,
-                               'subject': schedule.subject.title,
-                               'confirmed': schedule.confirmation,
-                               'student': scheduling_func.SchedulingConf.student_scheduling(schedule),
-                               'teacher': scheduling_func.SchedulingConf.teacher_scheduling(schedule)} for schedule in user.lesson_date),
-            **users_role
-        }
+        user_data = user.to_dict()
         return user_data
 
     @staticmethod
@@ -170,8 +136,7 @@ class UserConf:
     @staticmethod
     def wait_for_confirmation(user_id):
         user = UserConf.get_user_object(user_id)
-        scheduling = tuple({'id': schedule.id, 'time': schedule.lesson_time,
-                            'student': scheduling_func.SchedulingConf.student_scheduling(schedule)} for schedule in user.lesson_date if not schedule.confirmation)
+        scheduling = [schedule.to_dict() for schedule in user.lesson_date if not schedule.confirmation]
         return jsonify({'data': scheduling})
 
     @staticmethod

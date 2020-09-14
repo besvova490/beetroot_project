@@ -7,33 +7,13 @@ class SubjectConf:
 
     @staticmethod
     def get_subjects_list():
-        subjects_list = []
-        for subject in Subject.query.all():
-            subjects_list.append({
-                'id': subject.id,
-                'title': subject.title,
-                'description': subject.description,
-                'teachers': tuple({'name': teacher.full_name, 'email': teacher.email} for teacher in subject.users if teacher.is_teacher),
-                'students': tuple({'name': student.full_name, 'email': student.email} for student in subject.users if not student.is_teacher)
-            })
-        return subjects_list
+        return [subject.to_dict() for subject in Subject.query.all()]
 
     @staticmethod
     def get_subject_by_id(subject_id):
         if not Subject.query.get(subject_id):
             return jsonify({'message': f'Unknown subject with id: {subject_id}'}), 404
-        subject = Subject.query.get(subject_id)
-        subject_data = {
-            'title': subject.title,
-            'description': subject.description,
-            'teachers': tuple(
-                {'name': teacher.full_name, 'email': teacher.email} for teacher in
-                subject.users if teacher.is_teacher),
-            'students': tuple(
-                {'name': student.full_name, 'email': student.email} for student in
-                subject.users if not student.is_teacher)
-        }
-        return jsonify({'data': subject_data}), 200
+        return Subject.query.get(subject_id).to_dict()
 
     @staticmethod
     def create_subject(data):

@@ -86,6 +86,29 @@ def student_delete(user_id):
     return resp
 
 
+@app.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
+def scheduling_confirmation(user_id, scheduling_id):
+    teacher = users_func.UserConf.get_user_object(user_id).full_name
+    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id)
+    students = resp[0].json['student']
+    for student in students:
+        message = f'Teacher: {teacher} approved lesson: ' \
+                  f'{resp[0].json["subject"]} \nLesson time: {resp[0].json["time"]}'
+        users_func.UserConf.send_message(int(student), message)
+    return resp
+
+
+@app.route('/user/<int:user_id>/schedule/not-confirmed', methods=['GET'])
+def schedule_confirmed(user_id):
+    return users_func.UserConf.wait_for_confirmation(user_id), 200
+
+
+@app.route('/user/<int:teacher_id>/<int:user_id>', methods=['POST'])
+def connect_user_teacher(teacher_id, user_id):
+    resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
+    return resp
+
+
 @app.route('/subjects', methods=['POST'])
 def subject_create():
     subject_data = request.json['data']
@@ -126,23 +149,6 @@ def add_scheduling():
     return resp
 
 
-@app.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
-def scheduling_confirmation(user_id, scheduling_id):
-    teacher = users_func.UserConf.get_user_object(user_id).full_name
-    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id)
-    students = resp[0].json['student']
-    for student in students:
-        message = f'Teacher: {teacher} approved lesson: ' \
-                  f'{resp[0].json["subject"]} \nLesson time: {resp[0].json["time"]}'
-        users_func.UserConf.send_message(int(student), message)
-    return resp
-
-
-@app.route('/user/<int:user_id>/schedule/not-confirmed', methods=['GET'])
-def schedule_confirmed(user_id):
-    return users_func.UserConf.wait_for_confirmation(user_id), 200
-
-
 @app.route('/telegram-check', methods=['POST'])
 def telegram_check():
     resp = users_func.UserConf.check_telegram(request.json['data'])
@@ -160,9 +166,3 @@ def user_create_telegram():
 def user_sign_in_telegram():
     user_data = request.json['data']
     return users_func.UserConf.sign_in_telegram(user_data)
-
-
-@app.route('/telegram-user/<int:teacher_id>/<int:user_id>', methods=['POST'])
-def connect_user_teacher(teacher_id, user_id):
-    resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
-    return resp
