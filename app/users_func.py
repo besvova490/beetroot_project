@@ -48,17 +48,6 @@ class UserConf:
         return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
 
     @staticmethod
-    def sign_up_telegram(data):
-        if User.query.filter_by(telegram_id=data['telegram_id']).first():
-            return UserConf.sign_in_telegram(data)
-        user = User(telegram_id=data['telegram_id'])
-        user.is_teacher = data['teacher']
-        user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}"
-        db.session.add(user)
-        db.session.commit()
-        return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
-
-    @staticmethod
     def sign_in(data):
         user = User.query.filter_by(email=data['email']).first()
         if not user:
@@ -74,6 +63,15 @@ class UserConf:
             set_refresh_cookies(resp, refresh_token)
             return resp, 200
         return {'message': 'Invalid password'}, 403
+
+    @staticmethod
+    def sign_up_telegram(data):
+        user = User(telegram_id=data['telegram_id'])
+        user.is_teacher = data['teacher']
+        user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}"
+        db.session.add(user)
+        db.session.commit()
+        return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
 
     @staticmethod
     def sign_in_telegram(data):

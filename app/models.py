@@ -44,10 +44,10 @@ class User(db.Model):
     def check_password_hash(self, password):
         return sha256_crypt.verify(password, self.password)
 
-    def __init__(self, email="", password="", telegram_id=None) -> None:
+    def __init__(self, email=None, password='', telegram_id=None) -> None:
         self.email = email
         self.password = sha256_crypt.hash(password.strip())
-        self.teachers = telegram_id
+        self.telegram_id = telegram_id
 
     def to_dict(self):
         if self.is_teacher:
