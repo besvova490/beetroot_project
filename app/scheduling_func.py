@@ -1,6 +1,7 @@
 from app import db
 from app.models import Scheduling, User, Subject
 from flask import jsonify
+from app import users_func
 
 
 class SchedulingConf:
@@ -39,13 +40,36 @@ class SchedulingConf:
                 return {'id': user.id, 'name': user.full_name}
 
     @staticmethod
-    def scheduling_confirmation(scheduling_id):
+    def scheduling_confirmation(scheduling_id, user_id):
         scheduling = Scheduling.query.get(scheduling_id)
-        student = [user.telegram_id for user in scheduling.users if not user.is_teacher]
+        students = [user.telegram_id for user in scheduling.users if not user.is_teacher and user.telegram_id]
+        teacher = users_func.UserConf.get_user_object(user_id).full_name
         scheduling.confirmation = True
         db.session.add(scheduling)
         db.session.commit()
-        return jsonify({'message': 'Teacher approved the lesson',
-                        'status': True, 'student': student,
-                        'subject': scheduling.subject.title,
+        resp = jsonify({'message': 'Teacher approved the lesson',
+                        'status': True, 'subject': scheduling.subject.title,
                         'time': scheduling.lesson_time}), 200
+        if not students:
+            return resp
+        for student in students:
+            message = f'Teacher: {teacher} approved lesson: ' \
+                      f'{scheduling.subject.title} \nLesson time: {scheduling.lesson_time}'
+            users_func.UserConf.send_message(student, message)
+        return resp
+
+    @staticmethod
+    def delete_scheduling(scheduling_id):
+        scheduling = Scheduling.query.get(scheduling_id)
+        if not scheduling:
+            return jsonify({'message': 'Uknovn schedueling'}), 409
+        students = [user.telegram_id for user in scheduling.users if
+                   not user.is_teacher and user.telegram_id]
+        if students:
+            for student in students:
+                message = f'Teacher rejected lesson: ' \
+                          f'{scheduling.subject.title} \nLesson time: {scheduling.lesson_time}'
+                users_func.UserConf.send_message(student, message)
+        db.session.delete(scheduling)
+        db.session.commit()
+        return jsonify({'message': 'Scheduling deleted'}), 201

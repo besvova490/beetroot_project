@@ -22,13 +22,6 @@ class UserConf:
         return user
 
     @staticmethod
-    def check_telegram(data):
-        user = User.query.filter_by(telegram_id=str(data['telegram_id'])).first()
-        if user:
-            return jsonify({'message': 'Old user', 'exist': True}), 200
-        return jsonify({'message': 'New user', 'exist': False}), 200
-
-    @staticmethod
     def get_users_list(is_teacher=True):
         return [user.to_dict() for user in User.query.filter_by(is_teacher=is_teacher)]
 
@@ -42,10 +35,10 @@ class UserConf:
         if User.query.filter_by(email=data['email']).first():
             return jsonify({'message': f'User with current email {data["email"]} exists'}), 409
         user = User(email=data['email'], password=data['password'])
-        user.is_teacher = data['teacher']
+        user.is_teacher = data.get('teacher', False)
         db.session.add(user)
         db.session.commit()
-        return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
+        return jsonify({'message': f'{"Teacher" if user.is_teacher else "Student"} created!'}), 201
 
     @staticmethod
     def sign_in(data):
@@ -66,18 +59,20 @@ class UserConf:
 
     @staticmethod
     def sign_up_telegram(data):
+        if User.query.filter_by(telegram_id=data['telegram_id']).first():
+            return jsonify({'message': 'user exist'}), 409
         user = User(telegram_id=data['telegram_id'])
-        user.is_teacher = data['teacher']
-        user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}"
+        user.is_teacher = data.get('teacher', False)
+        user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
         db.session.add(user)
         db.session.commit()
-        return jsonify({'message': f'{"Teacher" if data["teacher"] else "Student"} created!'}), 201
+        return jsonify({'message': f'{"Teacher" if user.is_teacher else "Student"} created!'}), 201
 
     @staticmethod
     def sign_in_telegram(data):
-        user = User.query.filter_by(telegram_id=str(data['telegram_id'])).first()
+        user = User.query.filter_by(telegram_id=data['telegram_id']).first()
         if not user:
-            return UserConf.sign_up_telegram(data)
+            return jsonify({'massage': 'User not exist'}), 404
         resp = jsonify({'message': 'you are in sustem', 'data': UserConf.get_user_info(user)})
         return resp, 200
 
@@ -91,9 +86,9 @@ class UserConf:
     def update_user(user_id, data):
         user = UserConf.get_user_object(user_id)
         user.telegram_id = data.get('telegram_id', user.telegram_id)
-        user.email = data.get('email', user.email)
+        user.email = data.get('email', user.email).strip()
         user.phone_number = data.get('phone_number', user.phone_number)
-        user.full_name = data.get('full_name', user.full_name)
+        user.full_name = data.get('full_name', user.full_name).strip()
         db.session.add(user)
         db.session.commit()
         return jsonify({'message': 'Updated successful'}), 201

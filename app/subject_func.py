@@ -19,7 +19,7 @@ class SubjectConf:
     def create_subject(data):
         if Subject.query.filter_by(title=data['title']).first():
             return jsonify({'message': f'Subject with current title {data["title"]} exists'}), 409
-        subject = Subject(data['title'])
+        subject = Subject(data['title'].strip())
         db.session.add(subject)
         db.session.commit()
         return jsonify({'message': 'Subject crested!'}), 201
@@ -29,8 +29,8 @@ class SubjectConf:
         subject = Subject.query.get(subject_id)
         if not subject:
             return jsonify({'message': f'Unknown subject with id: {subject_id}'}), 404
-        subject.title = data.get('title', subject.title)
-        subject.description = data.get('description', subject.description)
+        subject.title = data.get('title', subject.title).strip()
+        subject.description = data.get('description', subject.description).strip()
         db.session.add(subject)
         db.session.commit()
         return jsonify({'message': 'Subject is updated!'}), 201

@@ -88,13 +88,7 @@ def student_delete(user_id):
 
 @app.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
 def scheduling_confirmation(user_id, scheduling_id):
-    teacher = users_func.UserConf.get_user_object(user_id).full_name
-    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id)
-    students = resp[0].json['student']
-    for student in students:
-        message = f'Teacher: {teacher} approved lesson: ' \
-                  f'{resp[0].json["subject"]} \nLesson time: {resp[0].json["time"]}'
-        users_func.UserConf.send_message(int(student), message)
+    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id)
     return resp
 
 
@@ -149,9 +143,9 @@ def add_scheduling():
     return resp
 
 
-@app.route('/telegram-check', methods=['POST'])
-def telegram_check():
-    resp = users_func.UserConf.check_telegram(request.json['data'])
+@app.route('/scheduling/<int:scheduling_id>', methods=['DELETE'])
+def delete_scheduling(scheduling_id):
+    resp = scheduling_func.SchedulingConf.delete_scheduling(scheduling_id)
     return resp
 
 
