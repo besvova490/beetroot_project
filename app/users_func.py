@@ -63,6 +63,7 @@ class UserConf:
             return jsonify({'message': 'user exist'}), 409
         user = User(telegram_id=data['telegram_id'])
         user.is_teacher = data.get('teacher', False)
+        user.email = data.get('email', '')
         user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
         db.session.add(user)
         db.session.commit()
