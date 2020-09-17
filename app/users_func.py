@@ -1,15 +1,13 @@
-from app import app, db
+from app import db
 from app.models import User, Subject
 from flask import jsonify
 from flask_jwt_extended import (
-    JWTManager, create_access_token,
+    create_access_token,
     create_refresh_token,
     set_access_cookies,
     set_refresh_cookies, unset_jwt_cookies
 )
 import requests
-
-jwt = JWTManager(app)
 
 
 class UserConf:

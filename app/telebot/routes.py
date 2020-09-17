@@ -1,141 +1,105 @@
-from app import app, users_func, subject_func, scheduling_func
+from app import users_func, subject_func, scheduling_func
+from app.telebot import bp
 from flask import jsonify, request
 import datetime
-from flask_jwt_extended import jwt_required, get_jwt_identity
 
 
-@app.route('/', methods=['GET'])
+@bp.route('/', methods=['GET'])
 def index():
-    resp = jsonify({'message': 'Home page', 'title': 'Home'})
-    return resp, 200
+    return jsonify({'message': 'hello from blueprint'}),200
 
 
-@app.route('/about', methods=['GET'])
-def about():
-    return jsonify({'message': 'About page', 'title': 'About'}), 200
-
-
-@app.route('/blog', methods=['GET'])
-@jwt_required
-def blog():
-    return jsonify({'message': 'Blog page', 'title': 'Blog'}), 200
-
-
-@app.route('/sign-up', methods=['POST'])
-def user_create():
-    user_data = request.json['data']
-    create = users_func.UserConf.sign_up(user_data)
-    return create
-
-
-@app.route('/sign-in', methods=['POST'])
-def user_sign_in():
-    user_data = request.json['data']
-    return users_func.UserConf.sign_in(user_data)
-
-
-@app.route('/log-out', methods=['POST'])
-def user_log_out():
-    return users_func.UserConf.log_out()
-
-
-@app.route('/tutors', methods=['GET'])
+@bp.route('/tutors', methods=['GET'])
 def tutors_page():
     tutors = users_func.UserConf.get_users_list(is_teacher=True)
     resp = jsonify({'message': 'Tutors page', 'title': 'Tutors', 'data': tutors})
     return resp, 200
 
 
-@app.route('/students', methods=['GET'])
+@bp.route('/students', methods=['GET'])
 def students_page():
     students = users_func.UserConf.get_users_list(is_teacher=False)
     resp = jsonify({'message': 'Students page', 'title': 'Students', 'data': students})
     return resp, 200
 
 
-@app.route('/subjects', methods=['GET'])
+@bp.route('/subjects', methods=['GET'])
 def subjects():
     subjects = subject_func.SubjectConf.get_subjects_list()
     resp = jsonify({'message': 'Subjects page', 'title': 'Subjects', 'data': subjects})
     return resp, 200
 
 
-@app.route('/profile', methods=['GET'])
-@jwt_required
-def user_profile():
-    return user_page(get_jwt_identity())
-
-
-@app.route('/user/<int:user_id>', methods=['GET'])
+@bp.route('/user/<int:user_id>', methods=['GET'])
 def user_page(user_id):
     user = users_func.UserConf.get_user_object(user_id)
     resp = users_func.UserConf.get_user_info(user)
     return jsonify({'massage': 'User page', 'data': resp}), 200
 
 
-@app.route('/user/<int:user_id>', methods=['PUT'])
+@bp.route('/user/<int:user_id>', methods=['PUT'])
 def student_page_update(user_id):
     data = request.json['data']
     resp = users_func.UserConf.update_user(user_id, data)
     return resp
 
 
-@app.route('/user/<int:user_id>', methods=['DELETE'])
+@bp.route('/user/<int:user_id>', methods=['DELETE'])
 def student_delete(user_id):
     resp = users_func.UserConf.user_delete(user_id)
     return resp
 
 
-@app.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
+@bp.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
 def scheduling_confirmation(user_id, scheduling_id):
     resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id)
     return resp
 
 
-@app.route('/user/<int:user_id>/schedule/not-confirmed', methods=['GET'])
+@bp.route('/user/<int:user_id>/schedule/not-confirmed', methods=['GET'])
 def schedule_confirmed(user_id):
     return users_func.UserConf.wait_for_confirmation(user_id), 200
 
 
-@app.route('/user/<int:teacher_id>/<int:user_id>', methods=['POST'])
+@bp.route('/user/<int:teacher_id>/<int:user_id>', methods=['POST'])
 def connect_user_teacher(teacher_id, user_id):
     resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
     return resp
 
 
-@app.route('/subjects', methods=['POST'])
+@bp.route('/subjects', methods=['POST'])
 def subject_create():
     subject_data = request.json['data']
     create = subject_func.SubjectConf.create_subject(subject_data)
     return create
 
 
-@app.route('/subjects/<int:subject_id>', methods=['PUT'])
+@bp.route('/subjects/<int:subject_id>', methods=['PUT'])
 def subject_page_update(subject_id):
     data = request.json['data']
     resp = subject_func.SubjectConf.subject_update(subject_id, data)
     return resp
 
 
-@app.route('/subjects/<int:subject_id>', methods=['DELETE'])
+@bp.route('/subjects/<int:subject_id>', methods=['DELETE'])
 def subject_delete(subject_id):
     resp = subject_func.SubjectConf.subject_delete(subject_id)
     return resp
 
 
-@app.route('/subjects/<int:subject_id>', methods=['GET'])
+@bp.route('/subjects/<int:subject_id>', methods=['GET'])
 def subject_page(subject_id):
     resp = subject_func.SubjectConf.get_subject_by_id(subject_id)
     return resp
 
 
-@app.route('/subjects/<int:subject_id>/<int:user_id>', methods=['POST'])
+@bp.route('/subjects/<int:subject_id>/<int:user_id>', methods=['POST'])
 def add_user_to_subject(user_id, subject_id):
     resp = users_func.UserConf.add_to_subject(user_id, subject_id)
     return resp
 
 
-@app.route('/scheduling', methods=['POST'])
+@bp.route('/scheduling', methods=['POST'])
 def add_scheduling():
     data = request.json['data']
     data['time'] = datetime.datetime.strptime(data['time'], '%d-%m-%Y')
@@ -143,20 +107,20 @@ def add_scheduling():
     return resp
 
 
-@app.route('/scheduling/<int:scheduling_id>', methods=['DELETE'])
+@bp.route('/scheduling/<int:scheduling_id>', methods=['DELETE'])
 def delete_scheduling(scheduling_id):
     resp = scheduling_func.SchedulingConf.delete_scheduling(scheduling_id)
     return resp
 
 
-@app.route('/telegram-sign-up', methods=['POST'])
+@bp.route('/telegram-sign-up', methods=['POST'])
 def user_create_telegram():
     user_data = request.json['data']
     create = users_func.UserConf.sign_up_telegram(user_data)
     return create
 
 
-@app.route('/telegram-sign-in', methods=['POST'])
+@bp.route('/telegram-sign-in', methods=['POST'])
 def user_sign_in_telegram():
     user_data = request.json['data']
     return users_func.UserConf.sign_in_telegram(user_data)

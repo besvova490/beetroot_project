@@ -1,19 +1,25 @@
 import os
 import unittest
-from app import app, db
+from app import create_app, db
 from app.models import User, Subject, Scheduling
 from app import users_func, scheduling_func, subject_func
-from config import basedir
+from config import Config, basedir
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
 
 
-class TestCase(unittest.TestCase):
+class TestConfig(Config):
+    TESTING = True
+    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(basedir, 'test.db')
+    ELASTICSEARCH_URL = None
+
+
+class FlaskTestCase(unittest.TestCase):
 
     def setUp(self):
-        app.config['TESTING'] = True
-        app.config['CSRF_ENABLED'] = False
-        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'test.db')
+        self.app = create_app(TestConfig)
+        self.app_context = self.app.app_context()
+        self.app_context.push()
         db.create_all()
 
     def tearDown(self):
@@ -51,14 +57,13 @@ class TestCase(unittest.TestCase):
         db.session.add(teacher)
         db.session.add(student)
         db.session.commit()
-        with app.app_context():
-            self.assertEqual(list(teacher.students), [])
-            self.assertEqual(list(student.teachers), [])
-            users_func.UserConf.connect_teacher_with_student(
-                teacher.id, student.id
-            )
-            self.assertTrue(student in teacher.students)
-            self.assertTrue(teacher in student.teachers)
+        self.assertEqual(list(teacher.students), [])
+        self.assertEqual(list(student.teachers), [])
+        users_func.UserConf.connect_teacher_with_student(
+            teacher.id, student.id
+        )
+        self.assertTrue(student in teacher.students)
+        self.assertTrue(teacher in student.teachers)
 
     def test_create_subject_with_same_name(self):
         db.session.add(Subject('Test'))
@@ -73,12 +78,11 @@ class TestCase(unittest.TestCase):
         db.session.add(user)
         db.session.add(subject)
         db.session.commit()
-        with app.app_context():
-            self.assertEqual(list(user.subjects), [])
-            self.assertEqual(list(subject.users), [])
-            users_func.UserConf.add_to_subject(user.id, subject.id)
-            self.assertTrue(subject in user.subjects)
-            self.assertTrue(user in subject.users)
+        self.assertEqual(list(user.subjects), [])
+        self.assertEqual(list(subject.users), [])
+        users_func.UserConf.add_to_subject(user.id, subject.id)
+        self.assertTrue(subject in user.subjects)
+        self.assertTrue(user in subject.users)
 
     def test_scheduling_creating(self):
         teacher = User(email='test_teacher@gmail.com')
@@ -90,19 +94,18 @@ class TestCase(unittest.TestCase):
         db.session.add(student)
         db.session.add(subject)
         db.session.commit()
-        with app.app_context():
-            self.assertEqual(Scheduling.query.all(), [])
-            resp = scheduling_func.SchedulingConf.add_scheduling(
-                teacher.id, student.id, subject.id, datetime.now()
-            )
-            self.assertEqual(resp[1], 201)
-            sch = Scheduling.query.first()
-            self.assertEqual(sch.id, 1)
-            self.assertEqual(sch.subject_id, subject.id)
-            self.assertTrue(teacher in sch.users)
-            self.assertTrue(student in sch.users)
-            self.assertTrue(sch in teacher.lesson_date)
-            self.assertTrue(sch in student.lesson_date)
+        self.assertEqual(Scheduling.query.all(), [])
+        resp = scheduling_func.SchedulingConf.add_scheduling(
+            teacher.id, student.id, subject.id, datetime.now()
+        )
+        self.assertEqual(resp[1], 201)
+        sch = Scheduling.query.first()
+        self.assertEqual(sch.id, 1)
+        self.assertEqual(sch.subject_id, subject.id)
+        self.assertTrue(teacher in sch.users)
+        self.assertTrue(student in sch.users)
+        self.assertTrue(sch in teacher.lesson_date)
+        self.assertTrue(sch in student.lesson_date)
 
     def test_to_dict_method(self):
         teacher = User(email='test_teacher@gmail.com')
@@ -147,21 +150,19 @@ class TestCase(unittest.TestCase):
             'phone_number': '1234567890',
             'full_name': 'Test Name'
         }
-        with app.app_context():
-            update = users_func.UserConf.update_user(user.id, user_data)
-            self.assertEqual(update[1], 201)
-            self.assertEqual(user.phone_number, user_data['phone_number'])
-            self.assertEqual(user.full_name, user_data['full_name'])
+        update = users_func.UserConf.update_user(user.id, user_data)
+        self.assertEqual(update[1], 201)
+        self.assertEqual(user.phone_number, user_data['phone_number'])
+        self.assertEqual(user.full_name, user_data['full_name'])
 
     def test_user_delete(self):
         user = User(email='test_user@gmail.com', password='test')
         db.session.add(user)
         db.session.commit()
         self.assertEqual(User.query.first(), user)
-        with app.app_context():
-            resp = users_func.UserConf.user_delete(user.id)
-            self.assertEqual(resp[1], 201)
-            self.assertEqual(User.query.first(), None)
+        resp = users_func.UserConf.user_delete(user.id)
+        self.assertEqual(resp[1], 201)
+        self.assertEqual(User.query.first(), None)
 
     def test_get_subjects_list(self):
         subject_list_empty = subject_func.SubjectConf.get_subjects_list()
@@ -178,38 +179,34 @@ class TestCase(unittest.TestCase):
         db.session.commit()
         subject_data = subject_func.SubjectConf.get_subject_by_id(subject.id)
         self.assertEqual(subject.to_dict(), subject_data)
-        with app.app_context():
-            subject_data_error = subject_func.SubjectConf.get_subject_by_id(99)
-            self.assertEqual(subject_data_error[1], 404)
+        subject_data_error = subject_func.SubjectConf.get_subject_by_id(99)
+        self.assertEqual(subject_data_error[1], 404)
 
     def test_create_subject_func(self):
         subject_data = {'title': 'Test'}
-        with app.app_context():
-            resp = subject_func.SubjectConf.create_subject(subject_data)
-            subject = Subject.query.filter_by(title=subject_data['title']).first()
-            self.assertEqual(resp[1], 201)
-            self.assertEqual(subject.title, subject_data['title'])
-            self.assertIsInstance(subject, Subject)
+        resp = subject_func.SubjectConf.create_subject(subject_data)
+        subject = Subject.query.filter_by(title=subject_data['title']).first()
+        self.assertEqual(resp[1], 201)
+        self.assertEqual(subject.title, subject_data['title'])
+        self.assertIsInstance(subject, Subject)
 
     def test_subject_update(self):
         subject = Subject('Test')
         db.session.add(subject)
         db.session.commit()
         subject_data = {'description': 'Test description'}
-        with app.app_context():
-            update = subject_func.SubjectConf.subject_update(subject.id, subject_data)
-            self.assertEqual(update[1], 201)
-            self.assertEqual(subject.description, subject_data['description'])
+        update = subject_func.SubjectConf.subject_update(subject.id, subject_data)
+        self.assertEqual(update[1], 201)
+        self.assertEqual(subject.description, subject_data['description'])
 
     def test_subject_delete(self):
         subject = Subject('Test')
         db.session.add(subject)
         db.session.commit()
         self.assertEqual(Subject.query.get(subject.id), subject)
-        with app.app_context():
-            deleted = subject_func.SubjectConf.subject_delete(subject.id)
-            self.assertEqual(deleted[1], 201)
-            self.assertEqual(Subject.query.get(subject.id), None)
+        deleted = subject_func.SubjectConf.subject_delete(subject.id)
+        self.assertEqual(deleted[1], 201)
+        self.assertEqual(Subject.query.get(subject.id), None)
 
 
 if __name__ == '__main__':
