@@ -29,7 +29,6 @@ class SubjectConf:
         subject = Subject.query.get(subject_id)
         if not subject:
             return jsonify({'message': f'Unknown subject with id: {subject_id}'}), 404
-        subject.title = data.get('title', subject.title).strip()
         subject.description = data.get('description', subject.description).strip()
         db.session.add(subject)
         db.session.commit()

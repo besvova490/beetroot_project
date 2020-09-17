@@ -8,9 +8,9 @@ class SchedulingConf:
 
     @staticmethod
     def add_scheduling(teacher_id, student_id, subject_id, data):
-        teacher = User.query.get(int(teacher_id))
-        student = User.query.get(int(student_id))
-        subject = Subject.query.get(int(subject_id))
+        teacher = User.query.get(teacher_id)
+        student = User.query.get(student_id)
+        subject = Subject.query.get(subject_id)
         if not teacher:
             return jsonify({'message': 'Wrong data for teacher'}), 404
         if not student:
@@ -62,7 +62,7 @@ class SchedulingConf:
     def delete_scheduling(scheduling_id):
         scheduling = Scheduling.query.get(scheduling_id)
         if not scheduling:
-            return jsonify({'message': 'Uknovn schedueling'}), 409
+            return jsonify({'message': 'Unknown scheduling'}), 409
         students = [user.telegram_id for user in scheduling.users if
                    not user.is_teacher and user.telegram_id]
         if students:
