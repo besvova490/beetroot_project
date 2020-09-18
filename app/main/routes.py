@@ -16,12 +16,6 @@ def about():
     return jsonify({'message': 'About page', 'title': 'About'}), 200
 
 
-@bp.route('/blog', methods=['GET'])
-@jwt_required
-def blog():
-    return jsonify({'message': 'Blog page', 'title': 'Blog'}), 200
-
-
 @bp.route('/sign-up', methods=['POST'])
 def user_create():
     user_data = request.json['data']
@@ -36,45 +30,38 @@ def user_sign_in():
 
 
 @bp.route('/log-out', methods=['POST'])
+@jwt_required
 def user_log_out():
     return users_func.UserConf.log_out()
 
 
 @bp.route('/tutors', methods=['GET'])
+@jwt_required
 def tutors_page():
-    tutors = users_func.UserConf.get_users_list(is_teacher=True)
-    resp = jsonify({'message': 'Tutors page', 'title': 'Tutors', 'data': tutors})
-    return resp, 200
+    return users_func.UserConf.get_users_list(is_teacher=True)
 
 
 @bp.route('/students', methods=['GET'])
+@jwt_required
 def students_page():
-    students = users_func.UserConf.get_users_list(is_teacher=False)
-    resp = jsonify({'message': 'Students page', 'title': 'Students', 'data': students})
-    return resp, 200
+    return users_func.UserConf.get_users_list(is_teacher=False)
 
 
 @bp.route('/subjects', methods=['GET'])
+@jwt_required
 def subjects():
-    subjects = subject_func.SubjectConf.get_subjects_list()
-    resp = jsonify({'message': 'Subjects page', 'title': 'Subjects', 'data': subjects})
-    return resp, 200
+    resp_subjects = subject_func.SubjectConf.get_subjects_list()
+    return resp_subjects
 
 
 @bp.route('/profile', methods=['GET'])
 @jwt_required
 def user_profile():
-    return user_page(get_jwt_identity())
-
-
-@bp.route('/user/<int:user_id>', methods=['GET'])
-def user_page(user_id):
-    user = users_func.UserConf.get_user_object(user_id)
-    resp = users_func.UserConf.get_user_info(user)
-    return jsonify({'massage': 'User page', 'data': resp}), 200
+    return users_func.UserConf.get_user_object(get_jwt_identity())
 
 
 @bp.route('/user/<int:user_id>', methods=['PUT'])
+@jwt_required
 def student_page_update(user_id):
     data = request.json['data']
     resp = users_func.UserConf.update_user(user_id, data)
@@ -82,29 +69,34 @@ def student_page_update(user_id):
 
 
 @bp.route('/user/<int:user_id>', methods=['DELETE'])
+@jwt_required
 def student_delete(user_id):
     resp = users_func.UserConf.user_delete(user_id)
     return resp
 
 
 @bp.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
+@jwt_required
 def scheduling_confirmation(user_id, scheduling_id):
     resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id)
     return resp
 
 
-@bp.route('/user/<int:user_id>/schedule/not-confirmed', methods=['GET'])
+@bp.route('/user/<int:user_id>/schedule-not-confirmed', methods=['GET'])
+@jwt_required
 def schedule_confirmed(user_id):
     return users_func.UserConf.wait_for_confirmation(user_id), 200
 
 
 @bp.route('/user/<int:teacher_id>/<int:user_id>', methods=['POST'])
+@jwt_required
 def connect_user_teacher(teacher_id, user_id):
     resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
     return resp
 
 
 @bp.route('/subjects', methods=['POST'])
+@jwt_required
 def subject_create():
     subject_data = request.json['data']
     create = subject_func.SubjectConf.create_subject(subject_data)
@@ -112,6 +104,7 @@ def subject_create():
 
 
 @bp.route('/subjects/<int:subject_id>', methods=['PUT'])
+@jwt_required
 def subject_page_update(subject_id):
     data = request.json['data']
     resp = subject_func.SubjectConf.subject_update(subject_id, data)
@@ -119,24 +112,28 @@ def subject_page_update(subject_id):
 
 
 @bp.route('/subjects/<int:subject_id>', methods=['DELETE'])
+@jwt_required
 def subject_delete(subject_id):
     resp = subject_func.SubjectConf.subject_delete(subject_id)
     return resp
 
 
 @bp.route('/subjects/<int:subject_id>', methods=['GET'])
+@jwt_required
 def subject_page(subject_id):
     resp = subject_func.SubjectConf.get_subject_by_id(subject_id)
     return resp
 
 
 @bp.route('/subjects/<int:subject_id>/<int:user_id>', methods=['POST'])
+@jwt_required
 def add_user_to_subject(user_id, subject_id):
     resp = users_func.UserConf.add_to_subject(user_id, subject_id)
     return resp
 
 
 @bp.route('/scheduling', methods=['POST'])
+@jwt_required
 def add_scheduling():
     data = request.json['data']
     data['time'] = datetime.datetime.strptime(data['time'], '%d-%m-%Y')
@@ -145,19 +142,7 @@ def add_scheduling():
 
 
 @bp.route('/scheduling/<int:scheduling_id>', methods=['DELETE'])
+@jwt_required
 def delete_scheduling(scheduling_id):
     resp = scheduling_func.SchedulingConf.delete_scheduling(scheduling_id)
     return resp
-
-
-@bp.route('/telegram-sign-up', methods=['POST'])
-def user_create_telegram():
-    user_data = request.json['data']
-    create = users_func.UserConf.sign_up_telegram(user_data)
-    return create
-
-
-@bp.route('/telegram-sign-in', methods=['POST'])
-def user_sign_in_telegram():
-    user_data = request.json['data']
-    return users_func.UserConf.sign_in_telegram(user_data)

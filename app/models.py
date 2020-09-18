@@ -70,7 +70,7 @@ class Subject(db.Model):
     __tablename__ = 'subjects'
 
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(), unique=True)
+    title = db.Column(db.String(), unique=True, nullable=False)
     description = db.Column(db.String())
     lesson_time = db.relationship("Scheduling", backref="subject", lazy='dynamic', cascade="all, delete")
 

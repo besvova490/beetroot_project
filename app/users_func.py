@@ -15,36 +15,48 @@ class UserConf:
     @staticmethod
     def get_user_object(user_id):
         user = User.query.get(user_id)
-        if not user:
-            raise KeyError(f'Unknown user with id: {user_id}')
         return user
 
     @staticmethod
     def get_users_list(is_teacher=True):
-        return [user.to_dict() for user in User.query.filter_by(is_teacher=is_teacher)]
+        users = [user.to_dict() for user in User.query.filter_by(is_teacher=is_teacher)]
+        if not users:
+            return jsonify({
+                'msg': f'Now {"tutors" if is_teacher else "students"}'
+            }), 200
+        return jsonify({'msg': f'{"Tutors" if is_teacher else "Students"} page',
+                        'title': f'{"Tutors" if is_teacher else "Students"}',
+                        'items': users}), 200
 
     @staticmethod
-    def get_user_info(user):
+    def get_user_info(user_id):
+        user = UserConf.get_user_object(user_id)
+        if not user:
+            return jsonify({'msg': f'Unknown user with id {user_id}'}), 401
         user_data = user.to_dict()
-        return user_data
+        return jsonify({'msg': 'User page', 'items': user_data}), 200
 
     @staticmethod
     def sign_up(data):
         if User.query.filter_by(email=data['email']).first():
-            return jsonify({'message': f'User with current email {data["email"]} exists'}), 409
-        user = User(email=data['email'], password=data['password'])
+            return jsonify({
+                'msg': f'User with current email {data["email"]} exists'
+            }), 409
+        user = User(email=data['email'].strip(),
+                    password=data['password'].strip())
         user.is_teacher = data.get('teacher', False)
         db.session.add(user)
         db.session.commit()
-        return jsonify({'message': f'{"Teacher" if user.is_teacher else "Student"} created!'}), 201
+        return jsonify({'msg': f'{"Teacher" if user.is_teacher else "Student"}'
+                               f' created', 'item_id': user.id}), 201
 
     @staticmethod
     def sign_in(data):
         user = User.query.filter_by(email=data['email']).first()
         if not user:
             return {
-                'message': f"User with the following email:"
-                           f" {data['email']} does not exist"
+                'msg': f"User with the following email:"
+                       f" {data['email']} does not found"
             }, 404
         if user.check_password_hash(data['password']):
             access_token = create_access_token(identity=user.id)
@@ -53,26 +65,30 @@ class UserConf:
             set_access_cookies(resp, access_token)
             set_refresh_cookies(resp, refresh_token)
             return resp, 200
-        return {'message': 'Invalid password'}, 403
+        return {'message': 'Invalid password'}, 401
 
     @staticmethod
     def sign_up_telegram(data):
         if User.query.filter_by(telegram_id=data['telegram_id']).first():
-            return jsonify({'message': 'user exist'}), 409
+            return jsonify({'msg': 'User exist'}), 409
         user = User(telegram_id=data['telegram_id'])
         user.is_teacher = data.get('teacher', False)
         user.email = data.get('email', '')
-        user.full_name = f"{data.get('first_name', '')} {data.get('last_name', '')}".strip()
+        user.full_name = f"{data.get('first_name', '')}" \
+                         f" {data.get('last_name', '')}".strip()
         db.session.add(user)
         db.session.commit()
-        return jsonify({'message': f'{"Teacher" if user.is_teacher else "Student"} created!'}), 201
+        return jsonify({
+            'message': f'{"Teacher" if user.is_teacher else "Student"} created!'
+        }), 201
 
     @staticmethod
     def sign_in_telegram(data):
         user = User.query.filter_by(telegram_id=data['telegram_id']).first()
         if not user:
-            return jsonify({'massage': 'User not exist'}), 404
-        resp = jsonify({'message': 'you are in sustem', 'data': UserConf.get_user_info(user)})
+            return jsonify({'massage': 'User not exist'}), 401
+        resp = jsonify({'message': 'You are in Authorized',
+                        'items': user.to_dict()})
         return resp, 200
 
     @staticmethod
@@ -104,7 +120,7 @@ class UserConf:
         subject = Subject.query.get(subject_id)
         user = UserConf.get_user_object(user_id)
         if not subject:
-            return jsonify({'message': 'Unknown subject'}), 404
+            return jsonify({'message': 'Unknown subject'}), 401
         if user in subject.users:
             return jsonify({'message': 'User already in subject'}), 409
         subject.users.append(user)
@@ -117,9 +133,11 @@ class UserConf:
         teacher = UserConf.get_user_object(teacher_id)
         student = UserConf.get_user_object(student_id)
         if not teacher or not student:
-            return jsonify({'message': 'Unknown teacher or student'}), 404
+            return jsonify({'message': 'Unknown teacher or student'}), 401
         if teacher in student.teachers:
-            return jsonify({'message': 'Student is already assigned to this teacher'}), 409
+            return jsonify({
+                'message': 'Student is already assigned to this teacher'
+            }), 409
         student.teachers.append(teacher)
         db.session.add(student)
         db.session.commit()
@@ -129,12 +147,12 @@ class UserConf:
     def wait_for_confirmation(user_id):
         user = UserConf.get_user_object(user_id)
         scheduling = [schedule.to_dict() for schedule in user.lesson_date if not schedule.confirmation]
-        return jsonify({'data': scheduling})
+        return jsonify({
+            'msg': 'Subjects that wait for approved', 'items': scheduling
+        }), 200
 
     @staticmethod
     def send_message(chat_id, text):
-        if not chat_id:
-            return {'message': 'No telegram id'}
         method = "sendMessage"
         token = "1317578331:AAEuCDPqvBDHMA68aWVuD5KdBAE92joNAqw"
         url = f"https://api.telegram.org/bot{token}/{method}"
