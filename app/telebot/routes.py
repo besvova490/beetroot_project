@@ -1,4 +1,4 @@
-from app import users_func, subject_func, scheduling_func
+from app import users_func, subject_func, scheduling_func, db
 from app.telebot import bp
 from flask import jsonify, request
 import datetime
@@ -94,3 +94,14 @@ def user_create_telegram():
 def user_sign_in_telegram():
     user_data = request.json['data']
     return users_func.UserConf.sign_in_telegram(user_data)
+
+
+@bp.route('/export-schedule', methods=['POST'])
+def get_schedule_in_excel():
+    resp = request.json['data']
+    user = users_func.UserConf.get_user_object(resp['user_id'])
+    if user.get_task_in_progress('export_posts'):
+        return jsonify({'msg': 'Task exist'}), 401
+    user.launch_task('export_posts', 'Exporting posts...')
+    db.session.commit()
+    return jsonify({'msg': 'Schedule sanded to your email'}), 200
