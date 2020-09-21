@@ -17,10 +17,11 @@ class Config:
     JWT_TOKEN_LOCATION = ['cookies']
     JWT_COOKIE_CSRF_PROTECT = False
     MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 587
+    MAIL_PORT = 465
     MAIL_USERNAME = 'besdaemon490@gmail.com'
     MAIL_PASSWORD = '55nibipi'
-    MAIL_USE_TLS = True
+    MAIL_USE_TLS = False
+    MAIL_USE_SSL = True
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_SAMESITE = 'None'
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
