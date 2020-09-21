@@ -24,6 +24,7 @@ class Config:
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_SAMESITE = 'None'
     REDIS_URL = os.environ['REDIS_URL'] or 'redis://'
+    CELERY_RESULT_BACKEND = ['REDIS_URL']
     LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
 
 

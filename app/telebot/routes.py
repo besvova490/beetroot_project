@@ -100,8 +100,6 @@ def user_sign_in_telegram():
 def get_schedule_in_excel():
     resp = request.json['data']
     user = users_func.UserConf.get_user_object(resp['user_id'])
-    if user.get_task_in_progress('export_posts'):
-        return jsonify({'msg': 'Task exist'}), 401
     user.launch_task('export_posts', 'Exporting posts...')
     db.session.commit()
     return jsonify({'msg': 'Schedule sanded to your email'}), 200
