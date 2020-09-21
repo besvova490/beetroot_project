@@ -1,6 +1,8 @@
 from app import db
+import redis
+import rq.exceptions
 from passlib.hash import sha256_crypt
-
+from flask import current_app
 
 association_users_roles = db.Table(
     'association_users_roles',
@@ -27,9 +29,10 @@ class User(db.Model):
     phone_number = db.Column(db.String())
     full_name = db.Column(db.String())
     is_teacher = db.Column(db.Boolean, default=False)
+    tasks = db.relationship('Task', backref='user', lazy='dynamic')
     lesson_date = db.relationship(
         "Scheduling", secondary=association_users_scheduling,
-        lazy="dynamic", backref=db.backref("users", lazy=True)
+        lazy="dynamic", backref=db.backref("users", lazy='dynamic')
     )
     teachers = db.relationship(
         'User', secondary=association_users_roles,
@@ -38,7 +41,7 @@ class User(db.Model):
         backref=db.backref('students', lazy='dynamic'), lazy='dynamic')
     subjects = db.relationship(
         "Subject", secondary=association_users_subject,
-        lazy="dynamic", backref=db.backref("users", lazy=True)
+        lazy="dynamic", backref=db.backref("users", lazy='dynamic')
     )
 
     def check_password_hash(self, password):
@@ -57,10 +60,30 @@ class User(db.Model):
         return dict(
             id=self.id, telegram_id=self.telegram_id, email=self.email,
             phone_number=self.phone_number, name=self.full_name,
-            is_teacher=self.is_teacher, lesson_date=[{'id': lesson_time.id, 'time': lesson_time.lesson_time, 'confirmation': lesson_time.confirmation, 'subject': lesson_time.subject.title} for lesson_time in self.lesson_date],
-            subjects=[{'id': subject.id, 'title': subject.title} for subject in self.subjects],
-            users=[{'id': user.id, 'telegram_id': user.telegram_id, 'name': user.full_name, 'is_teacher': user.is_teacher, 'email': user.email} for user in users]
+            is_teacher=self.is_teacher,
+            lesson_date=[lesson_time.to_dict()
+                         for lesson_time in self.lesson_date],
+            subjects=[{'id': subject.id, 'title': subject.title}
+                      for subject in self.subjects],
+            users=[{'id': user.id, 'telegram_id': user.telegram_id,
+                    'name': user.full_name, 'is_teacher': user.is_teacher,
+                    'email': user.email} for user in users]
         )
+
+    def launch_task(self, name, description, *args, **kwargs):
+        rq_job = current_app.task_queue.enqueue('app.tasks.' + name, self.id,
+                                                *args, **kwargs)
+        task = Task(id=rq_job.get_id(), name=name, description=description,
+                    user=self)
+        db.session.add(task)
+        return task
+
+    def get_tasks_in_progress(self):
+        return Task.query.filter_by(user=self, complete=False).all()
+
+    def get_task_in_progress(self, name):
+        return Task.query.filter_by(name=name, user=self,
+                                    complete=False).first()
 
     def __repr__(self) -> str:
         return f'<{"Teacher" if self.is_teacher else "Student"}: {self.email}>'
@@ -104,8 +127,31 @@ class Scheduling(db.Model):
             status=self.confirmation,
             lesson_time=self.lesson_time,
             subject={'id': self.subject_id, 'title': self.subject.title},
-            users=[{'id': user.id, 'telegram_id': user.telegram_id, 'name': user.full_name, 'is_teacher': user.is_teacher, 'email': user.email} for user in self.users]
+            users=[{
+                'id': user.id, 'telegram_id': user.telegram_id,
+                'name': user.full_name, 'is_teacher': user.is_teacher,
+                'email': user.email, 'phone_number' : user.phone_number
+            } for user in self.users]
         )
 
     def __repr__(self) -> str:
         return f'<Scheduling: {self.lesson_time}>'
+
+
+class Task(db.Model):
+    id = db.Column(db.String(36), primary_key=True)
+    name = db.Column(db.String(128), index=True)
+    description = db.Column(db.String(128))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    complete = db.Column(db.Boolean, default=False)
+
+    def get_rq_job(self):
+        try:
+            rq_job = rq.job.Job.fetch(self.id, connection=current_app.redis)
+        except (redis.exceptions.RedisError, rq.exceptions.NoSuchJobError):
+            return None
+        return rq_job
+
+    def get_progress(self):
+        job = self.get_rq_job()
+        return job.meta.get('progress', 0) if job is not None else 100

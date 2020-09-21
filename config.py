@@ -16,8 +16,15 @@ class Config:
     JWT_SECRET_KEY = 'super-secret'
     JWT_TOKEN_LOCATION = ['cookies']
     JWT_COOKIE_CSRF_PROTECT = False
+    MAIL_SERVER = 'smtp.googlemail.com'
+    MAIL_PORT = 587
+    MAIL_USERNAME = 'besdaemon490@gmail.com'
+    MAIL_PASSWORD = '55nibipi'
+    MAIL_USE_TLS = True
     JWT_COOKIE_SECURE = True
     JWT_COOKIE_SAMESITE = 'None'
+    REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
 
 
 class ProductionConfig(Config):

@@ -61,7 +61,7 @@ class UserConf:
         if user.check_password_hash(data['password']):
             access_token = create_access_token(identity=user.id)
             refresh_token = create_refresh_token(identity=user.id)
-            resp = jsonify({'login': True})
+            resp = jsonify({'login': True, 'item_id': (user.id)})
             set_access_cookies(resp, access_token)
             set_refresh_cookies(resp, refresh_token)
             return resp, 200
