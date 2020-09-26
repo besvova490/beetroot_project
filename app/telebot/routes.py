@@ -1,17 +1,13 @@
 from app import users_func, subject_func, scheduling_func, db, email
 from app.telebot import bp
-from flask import jsonify, request, current_app
+from flask import jsonify, request
 import datetime
 
 
-@bp.route('/tutors', methods=['GET'])
-def tutors_page():
-    return users_func.UserConf.get_users_list(is_teacher=True)
-
-
-@bp.route('/students', methods=['GET'])
-def students_page():
-    return users_func.UserConf.get_users_list(is_teacher=False)
+@bp.route('/users', methods=['GET'])
+def users_page():
+    query = request.args
+    return users_func.UserConf.get_users_list(is_teacher=True if query['users'] == 'teachers' else False)
 
 
 @bp.route('/subjects', methods=['GET'])
@@ -20,26 +16,19 @@ def subjects():
     return resp_subjects
 
 
-@bp.route('/user/<int:user_id>', methods=['GET'])
+@bp.route('/users/<int:user_id>', methods=['GET'])
 def user_page(user_id):
+    query = request.args
+    if query and query['action'] == 'follow_user':
+        resp = users_func.UserConf.connect_teacher_with_student(user_id, query['user_id'])
+        return resp
+    if query and query['action'] == 'follow_subject':
+        resp = users_func.UserConf.add_to_subject(user_id, query['subject_id'])
+        return resp
+    if query and query['action'] == 'get_schedule':
+        resp = users_func.UserConf.get_user_schedule(user_id, conformed=True if query['approved'] == 'True' else False)
+        return resp
     return users_func.UserConf.get_user_info(user_id)
-
-
-@bp.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
-def scheduling_confirmation(user_id, scheduling_id):
-    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id)
-    return resp
-
-
-@bp.route('/user/<int:user_id>/schedule-not-confirmed', methods=['GET'])
-def schedule_confirmed(user_id):
-    return users_func.UserConf.wait_for_confirmation(user_id)
-
-
-@bp.route('/user/<int:teacher_id>/<int:user_id>', methods=['POST'])
-def connect_user_teacher(teacher_id, user_id):
-    resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
-    return resp
 
 
 @bp.route('/subjects', methods=['POST'])
@@ -61,23 +50,30 @@ def subject_page(subject_id):
     return resp
 
 
-@bp.route('/subjects/<int:subject_id>/<int:user_id>', methods=['POST'])
-def add_user_to_subject(user_id, subject_id):
-    resp = users_func.UserConf.add_to_subject(user_id, subject_id)
-    return resp
-
-
-@bp.route('/scheduling', methods=['POST'])
+@bp.route('/schedule/', methods=['POST'])
 def add_scheduling():
     data = request.json['data']
-    data['time'] = datetime.datetime.strptime(data['time'], '%Y-%m-%d %H:%M:%S')
+    data['lesson_time'] = datetime.datetime.strptime(data['lesson_time'], '%Y-%m-%dT%H:%M:%SZ')
     resp = scheduling_func.SchedulingConf.add_scheduling(
-        data['teacher'], data['student'], data['subject'], data['time']
+        data['subject'], data['lesson_time'], data['users']
     )
     return resp
 
 
-@bp.route('/scheduling/<int:scheduling_id>', methods=['DELETE'])
+@bp.route('/schedule/<int:scheduling_id>', methods=['GET'])
+def scheduling_confirmation(scheduling_id):
+    query = request.args
+    if query:
+        if query['set_conformation'] == 'Flase':
+            resp = scheduling_func.SchedulingConf.delete_scheduling(scheduling_id)
+            return resp
+        resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id=query['user_id'])
+        return resp
+    resp = scheduling_func.SchedulingConf.get_scheduling(scheduling_id)
+    return resp
+
+
+@bp.route('/schedule/<int:scheduling_id>', methods=['DELETE'])
 def delete_scheduling(scheduling_id):
     resp = scheduling_func.SchedulingConf.delete_scheduling(scheduling_id)
     return resp

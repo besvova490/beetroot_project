@@ -21,8 +21,8 @@ def export_posts(user_id):
                    'Phone number', 'Email'])
         for schedule in user_data['lesson_date']:
             users = tuple(user for user in schedule['users'] if user['is_teacher'] != user_data['is_teacher'])
-            ws.append([schedule['lesson_time'], schedule['status'],
-                      schedule['subject']['title'], users[0]['name'],
+            ws.append([schedule['time'], schedule['status'],
+                      schedule['subject'], users[0]['full_name'],
                        users[0]['phone_number'], users[0]['email']
                        ])
         send_email('Scheduling form Beetroot Besvova490 PJ',
@@ -31,8 +31,7 @@ def export_posts(user_id):
                    text_body='This is scheduling your form '
                              'Beetroot Besvova490 PJ',
                    attachments=[("scheduling.xlsx", "application/vnd.ms-excel",
-                                 save_virtual_workbook(wb))],
-                   sync=True)
+                                 save_virtual_workbook(wb))], sync=True)
         task.complete = True
         db.session.commit()
     except:

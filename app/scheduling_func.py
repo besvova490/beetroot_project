@@ -5,22 +5,23 @@ from app import users_func
 
 
 class SchedulingConf:
+    @staticmethod
+    def get_scheduling(scheduling_id):
+        return Scheduling.query.get(scheduling_id).to_dict()
 
     @staticmethod
-    def add_scheduling(teacher_id, student_id, subject_id, data):
-        teacher = User.query.get(teacher_id)
-        student = User.query.get(student_id)
+    def add_scheduling(subject_id, data, users):
+        user1 = User.query.get(users[0])
+        user2 = User.query.get(users[1])
         subject = Subject.query.get(subject_id)
-        if not teacher:
-            return jsonify({'message': 'Wrong data for teacher'}), 404
-        if not student:
-            return jsonify({'message': 'Wrong data for student'}), 404
+        if not user1 or not user2:
+            return jsonify({'message': 'Wrong data for student or teacher'}), 400
         if not subject:
-            return jsonify({'message': 'Wrong data for subject'}), 404
+            return jsonify({'message': 'Wrong data for subject'}), 400
         scheduling = Scheduling()
         scheduling.lesson_time = data
-        scheduling.users.append(teacher)
-        scheduling.users.append(student)
+        scheduling.users.append(user1)
+        scheduling.users.append(user2)
         scheduling.subject = subject
         db.session.add(scheduling)
         db.session.commit()
@@ -43,20 +44,23 @@ class SchedulingConf:
     def scheduling_confirmation(scheduling_id, user_id):
         scheduling = Scheduling.query.get(scheduling_id)
         students = [user.telegram_id for user in scheduling.users if not user.is_teacher and user.telegram_id]
-        teacher = users_func.UserConf.get_user_object(user_id).full_name
-        scheduling.confirmation = True
-        db.session.add(scheduling)
-        db.session.commit()
-        resp = jsonify({'message': 'Teacher approved the lesson',
-                        'status': True, 'subject': scheduling.subject.title,
-                        'time': scheduling.lesson_time}), 200
-        if not students:
+        teacher = users_func.UserConf.get_user_object(user_id)
+        if teacher in scheduling.users:
+            teacher = teacher.full_name
+            scheduling.confirmation = True
+            db.session.add(scheduling)
+            db.session.commit()
+            resp = jsonify({'message': 'Teacher approved the lesson',
+                            'status': True, 'subject': scheduling.subject.title,
+                            'time': scheduling.lesson_time}), 200
+            if not students:
+                return resp
+            for student in students:
+                message = f'Teacher: {teacher} approved lesson: ' \
+                          f'{scheduling.subject.title} \nLesson time: {scheduling.lesson_time}'
+                users_func.UserConf.send_message(student, message)
             return resp
-        for student in students:
-            message = f'Teacher: {teacher} approved lesson: ' \
-                      f'{scheduling.subject.title} \nLesson time: {scheduling.lesson_time}'
-            users_func.UserConf.send_message(student, message)
-        return resp
+        return jsonify({'msg': 'This user can not approved this schedule'}), 200
 
     @staticmethod
     def delete_scheduling(scheduling_id):

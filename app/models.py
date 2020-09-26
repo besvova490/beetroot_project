@@ -59,14 +59,14 @@ class User(db.Model):
             users = self.teachers
         return dict(
             id=self.id, telegram_id=self.telegram_id, email=self.email,
-            phone_number=self.phone_number, name=self.full_name,
+            phone_number=self.phone_number, full_name=self.full_name,
             is_teacher=self.is_teacher,
             lesson_date=[lesson_time.to_dict()
                          for lesson_time in self.lesson_date],
             subjects=[{'id': subject.id, 'title': subject.title}
                       for subject in self.subjects],
             users=[{'id': user.id, 'telegram_id': user.telegram_id,
-                    'name': user.full_name, 'is_teacher': user.is_teacher,
+                    'full_name': user.full_name, 'is_teacher': user.is_teacher,
                     'email': user.email} for user in users]
         )
 
@@ -106,7 +106,7 @@ class Subject(db.Model):
             title=self.title,
             description=self.description,
             lesson_time=[{'id': lesson_time.id, 'time': lesson_time.lesson_time, 'confirmation': lesson_time.confirmation, 'subject': lesson_time.subject.title} for lesson_time in self.lesson_time],
-            users=[{'id': user.id, 'telegram_id': user.telegram_id, 'name': user.full_name, 'is_teacher': user.is_teacher, 'email': user.email} for user in self.users]
+            users=[{'id': user.id, 'telegram_id': user.telegram_id, 'full_name': user.full_name, 'is_teacher': user.is_teacher, 'email': user.email} for user in self.users]
         )
 
     def __repr__(self) -> str:
@@ -125,12 +125,12 @@ class Scheduling(db.Model):
         return dict(
             id=self.id,
             status=self.confirmation,
-            lesson_time=self.lesson_time,
-            subject={'id': self.subject_id, 'title': self.subject.title},
+            time=self.lesson_time,
+            subject=self.subject.title,
             users=[{
                 'id': user.id, 'telegram_id': user.telegram_id,
-                'name': user.full_name, 'is_teacher': user.is_teacher,
-                'email': user.email, 'phone_number' : user.phone_number
+                'full_name': user.full_name, 'is_teacher': user.is_teacher,
+                'email': user.email, 'phone_number': user.phone_number
             } for user in self.users]
         )
 

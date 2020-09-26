@@ -34,16 +34,12 @@ def user_log_out():
     return users_func.UserConf.log_out()
 
 
-@main.route('/tutors', methods=['GET'])
-@jwt_required
-def tutors_page():
-    return users_func.UserConf.get_users_list(is_teacher=True)
-
-
-@main.route('/students', methods=['GET'])
-@jwt_required
-def students_page():
-    return users_func.UserConf.get_users_list(is_teacher=False)
+@main.route('/users', methods=['GET'])
+def users_page():
+    query = request.args
+    if query:
+        return users_func.UserConf.get_users_list(is_teacher=True if query['users'] == 'teachers' else False)
+    return users_func.UserConf.get_users_list(_all=True)
 
 
 @main.route('/subjects', methods=['GET'])
@@ -56,10 +52,19 @@ def subjects():
 @main.route('/profile', methods=['GET'])
 @jwt_required
 def user_profile():
-    return users_func.UserConf.get_user_object(get_jwt_identity())
+    user_id = get_jwt_identity()
+    query = request.args
+    if query and query['action'] == 'follow_user':
+        resp = users_func.UserConf.connect_teacher_with_student(user_id, query[
+            'user_id'])
+        return resp
+    if query and query['action'] == 'follow_subject':
+        resp = users_func.UserConf.add_to_subject(user_id, query['subject_id'])
+        return resp
+    return users_func.UserConf.get_user_info(user_id)
 
 
-@main.route('/user/<int:user_id>', methods=['PUT'])
+@main.route('/users/<int:user_id>', methods=['PUT'])
 @jwt_required
 def student_page_update(user_id):
     data = request.json['data']
@@ -67,27 +72,27 @@ def student_page_update(user_id):
     return resp
 
 
-@main.route('/user/<int:user_id>', methods=['DELETE'])
+@main.route('/users/<int:user_id>', methods=['DELETE'])
 @jwt_required
 def student_delete(user_id):
     resp = users_func.UserConf.user_delete(user_id)
     return resp
 
 
-@main.route('/user/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
+@main.route('/users/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
 @jwt_required
 def scheduling_confirmation(user_id, scheduling_id):
     resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id)
     return resp
 
 
-@main.route('/user/<int:user_id>/schedule-not-confirmed', methods=['GET'])
+@main.route('/users/<int:user_id>/schedule-not-confirmed', methods=['GET'])
 @jwt_required
 def schedule_confirmed(user_id):
     return users_func.UserConf.wait_for_confirmation(user_id), 200
 
 
-@main.route('/user/<int:teacher_id>/<int:user_id>', methods=['POST'])
+@main.route('/users/<int:teacher_id>/<int:user_id>', methods=['POST'])
 @jwt_required
 def connect_user_teacher(teacher_id, user_id):
     resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)

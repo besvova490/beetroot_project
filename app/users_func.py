@@ -18,8 +18,11 @@ class UserConf:
         return user
 
     @staticmethod
-    def get_users_list(is_teacher=True):
-        users = [user.to_dict() for user in User.query.filter_by(is_teacher=is_teacher)]
+    def get_users_list(is_teacher=True, _all=False):
+        if not _all:
+            users = [user.to_dict() for user in User.query.filter_by(is_teacher=is_teacher)]
+        else:
+            users = [user.to_dict() for user in User.query.all()]
         if not users:
             return jsonify({
                 'msg': f'Now {"tutors" if is_teacher else "students"}'
@@ -65,7 +68,7 @@ class UserConf:
             set_access_cookies(resp, access_token)
             set_refresh_cookies(resp, refresh_token)
             return resp, 200
-        return {'message': 'Invalid password'}, 401
+        return {'msg': 'Invalid password'}, 401
 
     @staticmethod
     def sign_up_telegram(data):
@@ -79,7 +82,7 @@ class UserConf:
         db.session.add(user)
         db.session.commit()
         return jsonify({
-            'message': f'{"Teacher" if user.is_teacher else "Student"} created!'
+            'msg': f'{"Teacher" if user.is_teacher else "Student"} created!'
         }), 201
 
     @staticmethod
@@ -87,7 +90,7 @@ class UserConf:
         user = User.query.filter_by(telegram_id=data['telegram_id']).first()
         if not user:
             return jsonify({'massage': 'User not exist'}), 401
-        resp = jsonify({'message': 'You are in Authorized',
+        resp = jsonify({'msg': 'You are in Authorized',
                         'items': user.to_dict()})
         return resp, 200
 
@@ -106,47 +109,53 @@ class UserConf:
         user.full_name = data.get('full_name', user.full_name).strip()
         db.session.add(user)
         db.session.commit()
-        return jsonify({'message': 'Updated successful'}), 201
+        return jsonify({'msg': 'Updated successful'}), 201
 
     @staticmethod
     def user_delete(user_id):
         user = UserConf.get_user_object(user_id)
         db.session.delete(user)
         db.session.commit()
-        return jsonify({'message': 'User deleted'}), 201
+        return jsonify({'msg': 'User deleted'}), 201
 
     @staticmethod
     def add_to_subject(user_id, subject_id):
         subject = Subject.query.get(subject_id)
         user = UserConf.get_user_object(user_id)
         if not subject:
-            return jsonify({'message': 'Unknown subject'}), 401
+            return jsonify({'msg': 'Unknown subject'}), 401
         if user in subject.users:
-            return jsonify({'message': 'User already in subject'}), 409
+            return jsonify({'msg': 'User already in subject'}), 409
         subject.users.append(user)
         db.session.add(subject)
         db.session.commit()
-        return jsonify({'message': 'Subject added'}), 201
+        return jsonify({'msg': 'Subject added'}), 201
 
     @staticmethod
-    def connect_teacher_with_student(teacher_id, student_id):
-        teacher = UserConf.get_user_object(teacher_id)
-        student = UserConf.get_user_object(student_id)
-        if not teacher or not student:
-            return jsonify({'message': 'Unknown teacher or student'}), 401
-        if teacher in student.teachers:
-            return jsonify({
-                'message': 'Student is already assigned to this teacher'
-            }), 409
-        student.teachers.append(teacher)
-        db.session.add(student)
+    def connect_teacher_with_student(user1_id, user2_id):
+        user1 = UserConf.get_user_object(user1_id)
+        user2 = UserConf.get_user_object(user2_id)
+        if not user1 or not user2:
+            return jsonify({'msg': 'Unknown teacher or student'}), 401
+        if user2.is_teacher:
+            if user1 in user2.teachers:
+                return jsonify({
+                    'msg': 'Student is already assigned to this teacher'
+                }), 409
+            user1.teachers.append(user2)
+        else:
+            if user2 in user1.teachers:
+                return jsonify({
+                    'msg': 'Student is already assigned to this teacher'
+                }), 409
+            user2.teachers.append(user1)
         db.session.commit()
-        return jsonify({'message': 'Unification successful'}), 201
+        return jsonify({'msg': 'Unification successful'}), 201
 
     @staticmethod
-    def wait_for_confirmation(user_id):
+    def get_user_schedule(user_id, conformed=True):
         user = UserConf.get_user_object(user_id)
-        scheduling = [schedule.to_dict() for schedule in user.lesson_date if not schedule.confirmation]
+        scheduling = [schedule.to_dict() for schedule in user.lesson_date if schedule.confirmation == conformed]
         return jsonify({
             'msg': 'Subjects that wait for approved', 'items': scheduling
         }), 200

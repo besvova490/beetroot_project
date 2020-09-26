@@ -1,18 +1,61 @@
-2020-09-21 20:03:20,222 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 20:03:39,466 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
-2020-09-21 20:07:16,961 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
-2020-09-21 20:09:03,547 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 21:27:34,687 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 21:39:52,092 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 21:40:09,945 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
-2020-09-21 21:49:32,616 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 21:57:02,254 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 21:57:53,977 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:08:23,405 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:13:29,522 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:13:35,290 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:19:04,435 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:28:57,060 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:32:13,269 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
-2020-09-21 22:35:25,762 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
-2020-09-21 22:35:41,944 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 13:06:09,187 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:06:39,253 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 13:07:03,794 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:07:03,889 ERROR: Unhandled exception [in ./app/tasks.py:41]
+Traceback (most recent call last):
+  File "./app/tasks.py", line 24, in export_posts
+    ws.append([schedule['lesson_time'], schedule['status'],
+KeyError: 'lesson_time'
+2020-09-26 13:08:00,177 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 13:08:05,001 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:08:05,138 ERROR: Unhandled exception [in ./app/tasks.py:41]
+Traceback (most recent call last):
+  File "./app/tasks.py", line 24, in export_posts
+    ws.append([schedule['lesson_time'], schedule['status'],
+KeyError: 'lesson_time'
+2020-09-26 13:09:37,984 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 13:09:41,871 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:09:41,986 ERROR: Unhandled exception [in ./app/tasks.py:41]
+Traceback (most recent call last):
+  File "./app/tasks.py", line 25, in export_posts
+    schedule['subject']['title'], users[0]['full_name'],
+TypeError: string indices must be integers
+2020-09-26 13:11:33,373 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 13:11:35,705 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:11:35,792 ERROR: Unhandled exception [in ./app/tasks.py:41]
+Traceback (most recent call last):
+  File "./app/tasks.py", line 25, in export_posts
+    schedule['subject']['title'],
+TypeError: string indices must be integers
+2020-09-26 13:12:02,697 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:13:36,841 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:13:36,926 ERROR: Unhandled exception [in ./app/tasks.py:41]
+Traceback (most recent call last):
+  File "./app/tasks.py", line 24, in export_posts
+    print(schedule['subject']['title'])
+TypeError: string indices must be integers
+2020-09-26 13:14:39,782 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:14:39,860 ERROR: Unhandled exception [in ./app/tasks.py:41]
+Traceback (most recent call last):
+  File "./app/tasks.py", line 26, in export_posts
+    schedule['subject']['title'], users[0]['full_name'],
+TypeError: string indices must be integers
+2020-09-26 13:15:00,874 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
+2020-09-26 13:50:39,477 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 13:53:14,703 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 14:06:22,791 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 14:08:23,895 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 14:10:11,889 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 14:11:52,818 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 14:12:17,055 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:09:37,627 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:09:58,845 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:10:37,631 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:11:01,881 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:11:19,086 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:11:33,403 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:11:41,116 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:11:57,386 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:15:03,629 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:48:59,864 INFO: Beetroot besvova490 startup [in /home/besvova490/PycharmProjects/beetroot_project/app/__init__.py:79]
+2020-09-26 15:51:17,289 INFO: Beetroot besvova490 startup [in ./app/__init__.py:79]
