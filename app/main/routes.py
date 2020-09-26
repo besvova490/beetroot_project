@@ -55,11 +55,13 @@ def user_profile():
     user_id = get_jwt_identity()
     query = request.args
     if query and query['action'] == 'follow_user':
-        resp = users_func.UserConf.connect_teacher_with_student(user_id, query[
-            'user_id'])
+        resp = users_func.UserConf.connect_teacher_with_student(user_id, query['user_id'])
         return resp
     if query and query['action'] == 'follow_subject':
         resp = users_func.UserConf.add_to_subject(user_id, query['subject_id'])
+        return resp
+    if query and query['action'] == 'get_schedule':
+        resp = users_func.UserConf.get_user_schedule(user_id, conformed=True if query['approved'] == 'True' else False)
         return resp
     return users_func.UserConf.get_user_info(user_id)
 
@@ -76,26 +78,6 @@ def student_page_update(user_id):
 @jwt_required
 def student_delete(user_id):
     resp = users_func.UserConf.user_delete(user_id)
-    return resp
-
-
-@main.route('/users/<int:user_id>/scheduling/<int:scheduling_id>', methods=['POST'])
-@jwt_required
-def scheduling_confirmation(user_id, scheduling_id):
-    resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id)
-    return resp
-
-
-@main.route('/users/<int:user_id>/schedule-not-confirmed', methods=['GET'])
-@jwt_required
-def schedule_confirmed(user_id):
-    return users_func.UserConf.wait_for_confirmation(user_id), 200
-
-
-@main.route('/users/<int:teacher_id>/<int:user_id>', methods=['POST'])
-@jwt_required
-def connect_user_teacher(teacher_id, user_id):
-    resp = users_func.UserConf.connect_teacher_with_student(teacher_id, user_id)
     return resp
 
 
@@ -129,19 +111,27 @@ def subject_page(subject_id):
     return resp
 
 
-@main.route('/subjects/<int:subject_id>/<int:user_id>', methods=['POST'])
-@jwt_required
-def add_user_to_subject(user_id, subject_id):
-    resp = users_func.UserConf.add_to_subject(user_id, subject_id)
-    return resp
-
-
 @main.route('/scheduling', methods=['POST'])
 @jwt_required
 def add_scheduling():
     data = request.json['data']
-    data['time'] = datetime.datetime.strptime(data['time'], '%d-%m-%Y')
-    resp = scheduling_func.SchedulingConf.add_scheduling(data['teacher'], data['student'], data['subject'], data['time'])
+    data['lesson_time'] = datetime.datetime.strptime(data['lesson_time'], '%Y-%m-%dT%H:%M:%SZ')
+    resp = scheduling_func.SchedulingConf.add_scheduling(
+        data['subject'], data['lesson_time'], data['users']
+    )
+    return resp
+
+
+@main.route('/schedule/<int:scheduling_id>', methods=['GET'])
+def scheduling_confirmation(scheduling_id):
+    query = request.args
+    if query:
+        if query['set_conformation'] == 'Flase':
+            resp = scheduling_func.SchedulingConf.delete_scheduling(scheduling_id)
+            return resp
+        resp = scheduling_func.SchedulingConf.scheduling_confirmation(scheduling_id, user_id=query['user_id'])
+        return resp
+    resp = scheduling_func.SchedulingConf.get_scheduling(scheduling_id)
     return resp
 
 
