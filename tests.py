@@ -96,7 +96,7 @@ class FlaskTestCase(unittest.TestCase):
         db.session.commit()
         self.assertEqual(Scheduling.query.all(), [])
         resp = scheduling_func.SchedulingConf.add_scheduling(
-            teacher.id, student.id, subject.id, datetime.now()
+            subject_id=subject.id, data=datetime.now(), users=[teacher.id, student.id]
         )
         self.assertEqual(resp[1], 201)
         sch = Scheduling.query.first()
@@ -136,8 +136,8 @@ class FlaskTestCase(unittest.TestCase):
         db.session.add(teacher)
         db.session.add(student)
         db.session.commit()
-        teachers_list = users_func.UserConf.get_users_list(True)
-        students_list = users_func.UserConf.get_users_list(False)
+        teachers_list = users_func.UserConf.get_users_list(is_teacher=True)[0].json['items']
+        students_list = users_func.UserConf.get_users_list(is_teacher=False)[0].json['items']
         self.assertIsInstance(teachers_list, list)
         self.assertTrue(teacher.to_dict() in teachers_list)
         self.assertTrue(student.to_dict() in students_list)
@@ -165,22 +165,23 @@ class FlaskTestCase(unittest.TestCase):
         self.assertEqual(User.query.first(), None)
 
     def test_get_subjects_list(self):
-        subject_list_empty = subject_func.SubjectConf.get_subjects_list()
+        subject_list_empty = subject_func.SubjectConf.get_subjects_list()[0].json
         subject = Subject('Test')
         db.session.add(subject)
         db.session.commit()
-        subject_list = subject_func.SubjectConf.get_subjects_list()
-        self.assertTrue(subject.to_dict() in subject_list)
-        self.assertEqual(subject_list_empty, [])
+        subject_list = subject_func.SubjectConf.get_subjects_list()[0].json
+        self.assertTrue(subject.to_dict() in subject_list['items'])
+        self.assertEqual(subject_list_empty['msg'], 'Is now subjects yet')
+        self.assertEqual(subject_list_empty.get('items', False), False)
 
     def test_get_subject_by_id_func(self):
         subject = Subject('Test')
         db.session.add(subject)
         db.session.commit()
         subject_data = subject_func.SubjectConf.get_subject_by_id(subject.id)
-        self.assertEqual(subject.to_dict(), subject_data)
+        self.assertEqual(subject.to_dict(), subject_data[0].json['items'])
         subject_data_error = subject_func.SubjectConf.get_subject_by_id(99)
-        self.assertEqual(subject_data_error[1], 404)
+        self.assertEqual(subject_data_error[1], 400)
 
     def test_create_subject_func(self):
         subject_data = {'title': 'Test'}

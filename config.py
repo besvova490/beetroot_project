@@ -19,7 +19,7 @@ class Config:
     MAIL_SERVER = 'smtp.gmail.com'
     MAIL_PORT = 465
     MAIL_USERNAME = 'besdaemon490@gmail.com'
-    MAIL_PASSWORD = ''
+    MAIL_PASSWORD = '55nibipi'
     MAIL_USE_TLS = False
     MAIL_USE_SSL = True
     JWT_COOKIE_SECURE = True

@@ -15,8 +15,8 @@ class SubjectConf:
     @staticmethod
     def get_subject_by_id(subject_id):
         if not Subject.query.get(subject_id):
-            return jsonify({'msg': f'Unknown subject with id: {subject_id}'}), 401
-        return jsonify({'msg': 'Subject found', 'items': Subject.query.get(subject_id).to_dict()})
+            return jsonify({'msg': f'Unknown subject with id: {subject_id}'}), 400
+        return jsonify({'msg': 'Subject found', 'items': Subject.query.get(subject_id).to_dict()}), 200
 
     @staticmethod
     def create_subject(data):
