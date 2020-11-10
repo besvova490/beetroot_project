@@ -129,11 +129,11 @@ class SubjectConf(base_func.BaseFuncs):
 
     @staticmethod
     def create_subject(data):
+        if not data['title']:
+            return jsonify({'msg': 'Can not create subject with empty title'}), 400
         if Subject.query.filter_by(title=data['title']).first():
             return jsonify({'msg': f'Subject with current title {data["title"]} exists'}), 409
-        if not data['title'].strip():
-            return jsonify({'msg': 'Can not create subject with empty title'}), 400
-        subject = Subject(data['title'].strip())
+        subject = Subject(**data)
         db.session.add(subject)
         db.session.commit()
         return jsonify({'msg': f'Subject crested', 'item_id': subject.id}), 201

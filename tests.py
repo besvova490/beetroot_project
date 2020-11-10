@@ -2,7 +2,7 @@ import os
 import unittest
 from app import create_app, db
 from app.models import User, Subject, Scheduling
-from app import users_func, scheduling_func, subject_func
+from app import models_conf_classes
 from config import Config, basedir
 from datetime import datetime
 from sqlalchemy.exc import IntegrityError
@@ -16,15 +16,22 @@ class TestConfig(Config):
 
 class FlaskTestCase(unittest.TestCase):
 
-    def setUp(self):
-        self.app = create_app(TestConfig)
-        self.app_context = self.app.app_context()
-        self.app_context.push()
+    @classmethod
+    def setUpClass(cls):
+        cls.app = create_app(TestConfig)
+        cls.app_context = cls.app.app_context()
+        cls.app_context.push()
         db.create_all()
 
-    def tearDown(self):
+    def setUp(self):
+        User.query.delete()
+        Subject.query.delete()
+        Scheduling.query.delete()
+        db.session.commit()
+
+    @classmethod
+    def tearDownClass(cls):
         os.remove('test.db')
-        db.session.remove()
 
     def test_is_teacher_default_false(self):
         teacher = User(email='test_teacher@gmail.com', password='test')
@@ -41,8 +48,9 @@ class FlaskTestCase(unittest.TestCase):
         db.session.commit()
         user = User(email='test_user@gmail.com')
         db.session.add(user)
-        self.assertRaises(IntegrityError, db.session.commit)
-        self.assertIsInstance(user.email, str)
+        with self.app.app_context():
+            self.assertRaises(IntegrityError, db.session.commit)
+            self.assertIsInstance(user.email, str)
 
     def test_password_hashing(self):
         u = User(email='test_user@gmail.com', password='test')
@@ -59,7 +67,7 @@ class FlaskTestCase(unittest.TestCase):
         db.session.commit()
         self.assertEqual(list(teacher.students), [])
         self.assertEqual(list(student.teachers), [])
-        users_func.UserConf.connect_teacher_with_student(
+        models_conf_classes.UserConf.connect_teacher_with_student(
             teacher.id, student.id
         )
         self.assertTrue(student in teacher.students)
@@ -70,7 +78,8 @@ class FlaskTestCase(unittest.TestCase):
         db.session.commit()
         s = Subject('Test')
         db.session.add(s)
-        self.assertRaises(IntegrityError, db.session.commit)
+        with self.app.app_context():
+            self.assertRaises(IntegrityError, db.session.commit)
 
     def test_follow_subject_by_user(self):
         user = User(email='test_user@gmail.com', password='test')
@@ -80,7 +89,7 @@ class FlaskTestCase(unittest.TestCase):
         db.session.commit()
         self.assertEqual(list(user.subjects), [])
         self.assertEqual(list(subject.users), [])
-        users_func.UserConf.add_to_subject(user.id, subject.id)
+        models_conf_classes.UserConf.add_to_subject(user.id, subject.id)
         self.assertTrue(subject in user.subjects)
         self.assertTrue(user in subject.users)
 
@@ -95,7 +104,7 @@ class FlaskTestCase(unittest.TestCase):
         db.session.add(subject)
         db.session.commit()
         self.assertEqual(Scheduling.query.all(), [])
-        resp = scheduling_func.SchedulingConf.add_scheduling(
+        resp = models_conf_classes.SchedulingConf.add_scheduling(
             subject_id=subject.id, data=datetime.now(), users=[teacher.id, student.id]
         )
         self.assertEqual(resp[1], 201)
@@ -124,7 +133,7 @@ class FlaskTestCase(unittest.TestCase):
         user = User(email='test_user@gmail.com', password='test')
         db.session.add(user)
         db.session.commit()
-        user_obj = users_func.UserConf.get_user_object(user.id)
+        user_obj = models_conf_classes.UserConf.get_obj(User ,user.id)
         self.assertIsInstance(user_obj, User)
         self.assertEqual(user, user_obj)
 
@@ -136,8 +145,8 @@ class FlaskTestCase(unittest.TestCase):
         db.session.add(teacher)
         db.session.add(student)
         db.session.commit()
-        teachers_list = users_func.UserConf.get_users_list(is_teacher=True)[0].json['items']
-        students_list = users_func.UserConf.get_users_list(is_teacher=False)[0].json['items']
+        teachers_list = models_conf_classes.UserConf.get_objects_dict_list_or_404(User, is_teacher=True)[0].json['items']
+        students_list = models_conf_classes.UserConf.get_objects_dict_list_or_404(User, is_teacher=False)[0].json['items']
         self.assertIsInstance(teachers_list, list)
         self.assertTrue(teacher.to_dict() in teachers_list)
         self.assertTrue(student.to_dict() in students_list)
@@ -150,7 +159,7 @@ class FlaskTestCase(unittest.TestCase):
             'phone_number': '1234567890',
             'full_name': 'Test Name'
         }
-        update = users_func.UserConf.update_user(user.id, user_data)
+        update = models_conf_classes.UserConf.update_obj(User, user.id, db, user_data)
         self.assertEqual(update[1], 201)
         self.assertEqual(user.phone_number, user_data['phone_number'])
         self.assertEqual(user.full_name, user_data['full_name'])
@@ -160,32 +169,30 @@ class FlaskTestCase(unittest.TestCase):
         db.session.add(user)
         db.session.commit()
         self.assertEqual(User.query.first(), user)
-        resp = users_func.UserConf.user_delete(user.id)
+        resp = models_conf_classes.UserConf.delete_object(user, db)
         self.assertEqual(resp[1], 201)
         self.assertEqual(User.query.first(), None)
 
     def test_get_subjects_list(self):
-        subject_list_empty = subject_func.SubjectConf.get_subjects_list()[0].json
+        subject_list_empty = models_conf_classes.SubjectConf.get_objects_dict_list_or_404(Subject)[0].json
         subject = Subject('Test')
         db.session.add(subject)
         db.session.commit()
-        subject_list = subject_func.SubjectConf.get_subjects_list()[0].json
+        subject_list = models_conf_classes.SubjectConf.get_objects_dict_list_or_404(Subject)[0].json
         self.assertTrue(subject.to_dict() in subject_list['items'])
-        self.assertEqual(subject_list_empty['msg'], 'Is now subjects yet')
+        self.assertEqual(subject_list_empty['msg'], 'objects is not found')
         self.assertEqual(subject_list_empty.get('items', False), False)
 
     def test_get_subject_by_id_func(self):
         subject = Subject('Test')
         db.session.add(subject)
         db.session.commit()
-        subject_data = subject_func.SubjectConf.get_subject_by_id(subject.id)
-        self.assertEqual(subject.to_dict(), subject_data[0].json['items'])
-        subject_data_error = subject_func.SubjectConf.get_subject_by_id(99)
-        self.assertEqual(subject_data_error[1], 400)
+        subject_data = models_conf_classes.SubjectConf.get_obj_dict_or_404(Subject, subject.id)
+        self.assertEqual(subject.to_dict(), subject_data[0].json['item'])
 
     def test_create_subject_func(self):
         subject_data = {'title': 'Test'}
-        resp = subject_func.SubjectConf.create_subject(subject_data)
+        resp = models_conf_classes.SubjectConf.create_subject(subject_data)
         subject = Subject.query.filter_by(title=subject_data['title']).first()
         self.assertEqual(resp[1], 201)
         self.assertEqual(subject.title, subject_data['title'])
@@ -196,7 +203,7 @@ class FlaskTestCase(unittest.TestCase):
         db.session.add(subject)
         db.session.commit()
         subject_data = {'description': 'Test description'}
-        update = subject_func.SubjectConf.subject_update(subject.id, subject_data)
+        update = models_conf_classes.SubjectConf.update_obj(Subject, subject.id, db, subject_data)
         self.assertEqual(update[1], 201)
         self.assertEqual(subject.description, subject_data['description'])
 
@@ -205,7 +212,7 @@ class FlaskTestCase(unittest.TestCase):
         db.session.add(subject)
         db.session.commit()
         self.assertEqual(Subject.query.get(subject.id), subject)
-        deleted = subject_func.SubjectConf.subject_delete(subject.id)
+        deleted = models_conf_classes.SubjectConf.delete_object(subject, db)
         self.assertEqual(deleted[1], 201)
         self.assertEqual(Subject.query.get(subject.id), None)
 

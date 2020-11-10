@@ -1,4 +1,4 @@
-from app import db
+from app import db, base_func
 import redis
 import rq.exceptions
 from passlib.hash import sha256_crypt
@@ -19,7 +19,7 @@ association_users_scheduling = db.Table('users_scheduling_mtm',
 )
 
 
-class User(db.Model):
+class User(db.Model, base_func.BaseFuncs):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -89,7 +89,7 @@ class User(db.Model):
         return f'<{"Teacher" if self.is_teacher else "Student"}: {self.email}>'
 
 
-class Subject(db.Model):
+class Subject(db.Model, base_func.BaseFuncs):
     __tablename__ = 'subjects'
 
     id = db.Column(db.Integer, primary_key=True)
@@ -97,8 +97,9 @@ class Subject(db.Model):
     description = db.Column(db.String())
     lesson_time = db.relationship("Scheduling", backref="subject", lazy='dynamic', cascade="all, delete")
 
-    def __init__(self, title: str) -> None:
+    def __init__(self, title: str, description=None) -> None:
         self.title = title.title()
+        self.description = description or None
 
     def to_dict(self):
         return dict(
@@ -113,7 +114,7 @@ class Subject(db.Model):
         return f'<Subject: {self.title}>'
 
 
-class Scheduling(db.Model):
+class Scheduling(db.Model, base_func.BaseFuncs):
     __tablename__ = 'schedulings'
 
     id = db.Column(db.Integer, primary_key=True)

@@ -1,9 +1,8 @@
+.env
 .idea/
 venv/
+logs/
 __pycache__
 .mypy_cache
 .pytest_cache
-# Elastic Beanstalk Files
-.elasticbeanstalk/*
-!.elasticbeanstalk/*.cfg.yml
-!.elasticbeanstalk/*.global.yml
+test_persons.json

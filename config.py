@@ -6,24 +6,25 @@ load_dotenv(os.path.join(basedir, '.env'))
 
 
 class Config:
-    DEBUG = False
-    TESTING = False
-    CSRF_ENABLED = True
+    APP_SETTINGS = os.environ.get('APP_SETTINGS') or 'config.Config"'
+    DEBUG = os.environ.get('FLASK_DEBUG') or 0
+    TESTING = os.environ.get('FLASK_TESTING') or 0
+    CSRF_ENABLED = os.environ.get('CSRF_ENABLED') or 1
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'you-will-never-guess'
-    APP_SECRET = 'SAJHF)HAw98heoahsokehI)ASHDF*Hgmsu9dhg'
+    APP_SECRET = os.environ.get('APP_SECRET') or 'SAJHF)HAw98heoahsokehI)ASHDF*Hgmsu9dhg'
     SQLALCHEMY_DATABASE_URI = os.environ['DATABASE_URL']
-    SQLALCHEMY_TRACK_MODIFICATIONS = False
-    JWT_SECRET_KEY = 'super-secret'
-    JWT_TOKEN_LOCATION = ['cookies']
-    JWT_COOKIE_CSRF_PROTECT = False
-    MAIL_SERVER = 'smtp.gmail.com'
-    MAIL_PORT = 465
-    MAIL_USERNAME = 'besdaemon490@gmail.com'
-    MAIL_PASSWORD = '55nibipi'
-    MAIL_USE_TLS = False
-    MAIL_USE_SSL = True
-    JWT_COOKIE_SECURE = True
-    JWT_COOKIE_SAMESITE = 'None'
+    SQLALCHEMY_TRACK_MODIFICATIONS = os.environ.get('SQLALCHEMY_TRACK_MODIFICATIONS') or 0
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'super-secret'
+    JWT_TOKEN_LOCATION = os.environ.get('JWT_TOKEN_LOCATION') or ['cookies']
+    JWT_COOKIE_CSRF_PROTECT = os.environ.get('JWT_COOKIE_CSRF_PROTECT') or 0
+    MAIL_SERVER = os.environ.get('MAIL_SERVER') or 'smtp.gmail.com'
+    MAIL_PORT = os.environ.get('MAIL_PORT') or 465
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME') or ''
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD') or ''
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS') or 0
+    MAIL_USE_SSL = os.environ.get('MAIL_USE_SSL') or 1
+    JWT_COOKIE_SECURE = os.environ.get('JWT_COOKIE_SECURE') or 0
+    JWT_COOKIE_SAMESITE = os.environ.get('JWT_COOKIE_SAMESITE') or 'None'
     REDIS_URL = os.environ.get('REDIS_URL') or 'redis://'
     LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
 

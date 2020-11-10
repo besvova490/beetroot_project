@@ -34,7 +34,7 @@ def export_posts(user_id):
                                  save_virtual_workbook(wb))], sync=True)
         task.complete = True
         db.session.commit()
-    except:
+    except Exception:
         task.complete = True
         db.session.commit()
         app.logger.error('Unhandled exception', exc_info=sys.exc_info())
